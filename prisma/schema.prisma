@@ -1,0 +1,87 @@
+// MyVisa — Prisma v6 schema (do not upgrade to v7 without rewriting the
+// `url` datasource into a driver adapter + prisma.config.ts).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A paid visa application — doubles as the admin "customer" record and the
+/// dashboard "application" (with its timeline, documents, and messages).
+model Application {
+  id              String   @id @default(cuid())
+  ref             String   @unique // e.g. MV-48213
+  title           String? // dashboard application name, e.g. "Schengen Tourist Visa"
+  // applicant
+  fullName        String
+  email           String
+  phone           String?
+  dob             String?
+  nationality     String
+  nationalityFlag String // ISO-2 code for flagcdn, e.g. "ng"
+  passport        String?
+  // trip
+  destination     String
+  destinationFlag String // ISO-2 code, e.g. "us" / "eu"
+  visaType        String
+  purpose         String?
+  travelDate      String?
+  duration        String?
+  // commercial
+  plan            String   @default("Standard") // Basic | Standard | Premium
+  amount          String // "$89.00"
+  govFee          String? // "$185.00"
+  paymentMethod   String? // "Visa •••• 4242"
+  txn             String? // "txn_9f2a71c4"
+  paidOn          String? // "18 Jun 2026"
+  visaCenter      String? // applicant's chosen visa application centre (city)
+  status          String   @default("Paid") // Paid | Refunded | Pending
+  statusIndex     Int      @default(0) // 0..4 timeline position (see statuses[])
+  isDemo          Boolean  @default(false) // seeded demo rows shown on the dashboard
+  createdAt       DateTime @default(now())
+
+  documents Document[]
+  messages  Message[]
+
+  @@index([email])
+  @@index([status])
+}
+
+/// A document attached to an application checklist. Bytes are stored in the DB
+/// (portable for this deploy; swap for object storage at scale).
+model Document {
+  id            String      @id @default(cuid())
+  name          String
+  state         String // Verified | In review | Action needed | Missing
+  mimeType      String? // e.g. "application/pdf"
+  size          Int? // bytes
+  data          Bytes? // file contents (null for seeded/placeholder docs)
+  uploadedBy    String      @default("customer") // customer | specialist
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+}
+
+/// A status/specialist message on an application timeline.
+model Message {
+  id            String      @id @default(cuid())
+  who           String
+  when          String
+  text          String
+  fromCustomer  Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+}
+
+/// A message submitted from the public Contact page.
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}

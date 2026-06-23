@@ -1,0 +1,335 @@
+@import "tailwindcss";
+
+/* ===== MyVisa design tokens (extracted from MyVisa.dc.html) ===== */
+@theme {
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+
+  /* navy */
+  --color-navy: #0a1f3c;
+  --color-navy-950: #071529;
+  --color-navy-800: #0c2a4d;
+  --color-navy-700: #163b66;
+  --color-navy-600: #12466b;
+
+  /* emerald brand */
+  --color-brand: #10b981;
+  --color-brand-600: #059669;
+  --color-brand-300: #6ee7b7;
+  --color-brand-200: #5eead4;
+  --color-brand-100: #a7f3d0;
+  --color-brand-50: #ecfdf5;
+
+  /* surfaces */
+  --color-canvas: #f5f7fa;
+  --color-line: #e8edf4;
+  --color-line-soft: #eef2f7;
+  --color-line-input: #dbe3ec;
+  --color-line-pop: #e2eaf2;
+
+  /* ink */
+  --color-ink: #0c1a30;
+  --color-ink-700: #46566e;
+  --color-ink-500: #64748b;
+  --color-ink-400: #94a3b8;
+  --color-ink-300: #cbd5e1;
+
+  /* radii */
+  --radius-card: 18px;
+  --radius-xl2: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: #10b981;
+  color: #fff;
+}
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+@keyframes mvFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes mvUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes mvPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.mv-up {
+  animation: mvUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.mv-pop {
+  animation: mvPop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ===== hover / focus states (the design's style-hover / style-focus) ===== */
+.mv-navlink {
+  transition: color 0.15s ease;
+}
+.mv-navlink:hover {
+  color: #0a1f3c;
+}
+.mv-btn-emerald {
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.mv-btn-emerald:hover {
+  background: #059669;
+}
+.mv-btn-lift:hover {
+  transform: translateY(-2px);
+}
+.mv-btn-navy {
+  transition: background 0.18s ease;
+}
+.mv-btn-navy:hover {
+  background: #0c2a4d;
+}
+.mv-btn-ghost {
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.mv-btn-ghost:hover {
+  background: #e6eef6;
+}
+.mv-glass-btn {
+  transition: background 0.18s ease;
+}
+.mv-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.mv-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.mv-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(10, 31, 60, 0.12);
+}
+.mv-card-sm:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 38px rgba(10, 31, 60, 0.1);
+}
+.mv-dest-btn {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mv-dest-btn:hover {
+  background: #10b981 !important;
+  color: #fff !important;
+  border-color: #10b981 !important;
+}
+.mv-opt:hover {
+  background: #f1f6fb;
+}
+.mv-trigger {
+  transition: border-color 0.15s ease;
+}
+.mv-trigger:hover {
+  border-color: #10b981;
+}
+.mv-input:focus {
+  border-color: #10b981;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+.mv-row:hover {
+  background: #f8fbfe;
+}
+.mv-side-link {
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.mv-footlink {
+  transition: color 0.15s ease;
+}
+.mv-footlink:hover {
+  color: #fff;
+}
+
+/* ===== responsive: tablet & down (≤960px) ===== */
+@media (max-width: 960px) {
+  .mv-navlinks {
+    display: none !important;
+  }
+  .mv-herogrid {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-steps,
+  .mv-services,
+  .mv-pricing,
+  .mv-dest {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .mv-compare {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-foot {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28px !important;
+  }
+}
+
+/* ===== small tablet / large phone (≤768px) ===== */
+@media (max-width: 768px) {
+  .mv-home section {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+  .mv-home h2 {
+    font-size: 30px !important;
+  }
+  .mv-pad-lg {
+    padding: 36px 22px !important;
+  }
+  /* stack the two-up wizard field rows */
+  .mv-fieldgrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ===== admin table becomes horizontally scrollable ===== */
+@media (max-width: 820px) {
+  .mv-table-inner {
+    min-width: 680px;
+  }
+}
+
+/* ===== dashboard / admin layout stacking (≤860px) ===== */
+@media (max-width: 860px) {
+  .mv-dashgrid {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-admin {
+    flex-direction: column !important;
+  }
+  .mv-admin aside {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .mv-admin aside .mv-side-back {
+    margin-top: 0 !important;
+    margin-left: auto !important;
+    padding-top: 0 !important;
+  }
+}
+
+/* ===== phone (≤640px) ===== */
+.mv-stepper-mini {
+  display: none;
+}
+@media (max-width: 640px) {
+  .mv-herogrid {
+    padding: 48px 18px 60px !important;
+    gap: 30px !important;
+  }
+  .mv-herogrid h1 {
+    font-size: 38px !important;
+    line-height: 1.08 !important;
+  }
+  .mv-herogrid p {
+    font-size: 16px !important;
+  }
+  .mv-home h2 {
+    font-size: 26px !important;
+  }
+  .mv-pad-lg {
+    padding: 30px 18px !important;
+  }
+  .mv-contact h1 {
+    font-size: 32px !important;
+  }
+  .mv-foot {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-checker {
+    padding: 22px !important;
+  }
+  .mv-apply-wrap {
+    padding: 28px 16px 64px !important;
+  }
+  .mv-dash-wrap {
+    padding: 24px 16px 64px !important;
+  }
+  .mv-admin-content {
+    padding: 22px 16px !important;
+  }
+  .mv-statrow {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-fee-features {
+    grid-template-columns: 1fr !important;
+  }
+  .mv-steps,
+  .mv-services,
+  .mv-pricing,
+  .mv-dest {
+    grid-template-columns: 1fr !important;
+  }
+  /* swap the circle stepper for a compact progress bar */
+  .mv-stepper-full {
+    display: none !important;
+  }
+  .mv-stepper-mini {
+    display: block !important;
+  }
+}
+
+/* ===== mobile navbar: hamburger replaces inline buttons ≤960px ===== */
+.mv-hamburger {
+  display: none;
+}
+@media (max-width: 960px) {
+  .mv-hamburger {
+    display: block;
+  }
+  .mv-nav-login,
+  .mv-nav-cta {
+    display: none !important;
+  }
+}
+@media (max-width: 420px) {
+  .mv-nav {
+    padding: 12px 16px !important;
+    gap: 12px !important;
+  }
+}

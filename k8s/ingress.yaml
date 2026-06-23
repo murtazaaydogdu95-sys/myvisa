@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myvisa-web
+  namespace: myvisa
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - myvisa.aydex.nl
+      secretName: myvisa-web-tls
+  rules:
+    - host: myvisa.aydex.nl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: myvisa-web
+                port:
+                  number: 80

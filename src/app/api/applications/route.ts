@@ -1,0 +1,111 @@
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { countries, destinationOpts, SERVICE_FEE_AMOUNT, SERVICE_PLAN_NAME } from "@/lib/data";
+import { trCountry } from "@/lib/tr";
+import { makeRef, makeTxn, formatDay } from "@/lib/format";
+import { applicationSchema } from "@/lib/validation";
+import { sendEmail, applicationConfirmationEmail } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
+import { customerToken } from "@/lib/auth-token";
+
+function codeFor(list: { name: string; code: string }[], name: string, fallback: string) {
+  return list.find((c) => c.name === name)?.code ?? fallback;
+}
+
+export async function POST(req: Request) {
+  if (!rateLimit(req, "applications", 10, 60_000)) {
+    return NextResponse.json({ error: "Çok fazla istek. Lütfen biraz sonra tekrar deneyin." }, { status: 429 });
+  }
+
+  const json = await req.json().catch(() => null);
+  const parsed = applicationSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Geçersiz başvuru verisi." }, { status: 400 });
+  }
+  const d = parsed.data;
+
+  const base = {
+    title: `${trCountry(d.destination)} vizesi`,
+    fullName: d.fullName,
+    email: d.email,
+    phone: d.phone || null,
+    dob: d.dob || null,
+    nationality: d.nationality,
+    nationalityFlag: codeFor(countries, d.nationality, "gb"),
+    passport: d.passport || null,
+    destination: d.destination,
+    destinationFlag: codeFor(destinationOpts, d.destination, "us"),
+    visaType: d.visaType || "Tourist",
+    visaCenter: d.visaCenter || null,
+    purpose: d.purpose || null,
+    travelDate: d.travelDate || null,
+    duration: d.duration || null,
+    plan: SERVICE_PLAN_NAME,
+    amount: SERVICE_FEE_AMOUNT,
+    paymentMethod: "Card payment",
+    txn: makeTxn(),
+    paidOn: formatDay(),
+    status: "Paid",
+    statusIndex: 0,
+    isDemo: false,
+    documents: {
+      create: d.documents.map((f) => {
+        const bytes = f.dataBase64 ? Buffer.from(f.dataBase64, "base64") : null;
+        return {
+          name: f.name,
+          state: "In review",
+          mimeType: f.mime ?? null,
+          size: bytes?.length ?? null,
+          data: bytes,
+          uploadedBy: "customer",
+        };
+      }),
+    },
+    messages: {
+      create: [
+        {
+          who: "Sistem",
+          when: "az önce",
+          text: "Başvurunuz alındı ve ödemeniz onaylandı. Bir MyVisa uzmanı kısa süre içinde belgelerinizi incelemeye başlayacak.",
+        },
+      ],
+    },
+  };
+
+  // Create with a unique-ref retry (ref collisions are rare but possible).
+  let application = null;
+  for (let attempt = 0; attempt < 5 && !application; attempt++) {
+    const ref = `${makeRef()}-${Math.floor(Math.random() * 90 + 10)}`;
+    try {
+      application = await prisma.application.create({ data: { ref, ...base } });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
+      throw e;
+    }
+  }
+  if (!application) {
+    return NextResponse.json({ error: "Başvuru oluşturulamadı. Lütfen tekrar deneyin." }, { status: 500 });
+  }
+
+  // Fire-and-forget confirmation email (no-op without RESEND_API_KEY).
+  void sendEmail({
+    to: application.email,
+    ...applicationConfirmationEmail({
+      fullName: application.fullName,
+      ref: application.ref,
+      destination: trCountry(application.destination),
+    }),
+  });
+
+  // Auto-log-in the applicant so the apply → dashboard redirect lands authed.
+  const res = NextResponse.json({ id: application.id, ref: application.ref }, { status: 201 });
+  res.cookies.set("mv_customer", await customerToken(d.email), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+  return res;
+}
