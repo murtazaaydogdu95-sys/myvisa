@@ -98,3 +98,21 @@ model ContactMessage {
   message   String
   createdAt DateTime @default(now())
 }
+
+/// Durable outbound-notification queue (transactional outbox). A notification is
+/// enqueued, delivered best-effort immediately, and retried with backoff by a
+/// drainer if delivery fails — so alerts are never lost when Telegram is down.
+model Notification {
+  id          String    @id @default(cuid())
+  channel     String    @default("telegram") // telegram | (future: email, slack…)
+  payload     String // the message body to send
+  status      String    @default("pending") // pending | sending | sent | failed
+  attempts    Int       @default(0)
+  lastError   String?
+  nextAttempt DateTime  @default(now()) // earliest time to (re)try
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, nextAttempt])
+}

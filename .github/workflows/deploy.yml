@@ -108,6 +108,7 @@ jobs:
           ADMIN_EMAIL: ${{ secrets.MYVISA_ADMIN_EMAIL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.MYVISA_TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.MYVISA_TELEGRAM_CHAT_ID }}
+          CRON_SECRET: ${{ secrets.MYVISA_CRON_SECRET }}
         run: |
           umask 077
           DATABASE_URL="postgresql://myvisa:${DB_PASSWORD}@myvisa-postgres:5432/myvisa?schema=public"
@@ -129,6 +130,7 @@ jobs:
             ADMIN_EMAIL: $(printf '%s' "$ADMIN_EMAIL" | base64 | tr -d '\n')
             TELEGRAM_BOT_TOKEN: $(printf '%s' "$TELEGRAM_BOT_TOKEN" | base64 | tr -d '\n')
             TELEGRAM_CHAT_ID: $(printf '%s' "$TELEGRAM_CHAT_ID" | base64 | tr -d '\n')
+            CRON_SECRET: $(printf '%s' "$CRON_SECRET" | base64 | tr -d '\n')
           EOF
 
           # Ensure namespace exists, then pipe the Secret through SSH stdin into kubectl.

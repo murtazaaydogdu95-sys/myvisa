@@ -6,7 +6,8 @@ import { trCountry } from "@/lib/tr";
 import { makeRef, makeTxn, formatDay } from "@/lib/format";
 import { applicationSchema } from "@/lib/validation";
 import { sendEmail, applicationConfirmationEmail } from "@/lib/email";
-import { sendTelegram, newPurchaseMessage } from "@/lib/telegram";
+import { newPurchaseMessage } from "@/lib/telegram";
+import { enqueueTelegram, flushNotifications } from "@/lib/notifications";
 import { rateLimit } from "@/lib/rate-limit";
 import { customerToken } from "@/lib/auth-token";
 
@@ -114,8 +115,10 @@ export async function POST(req: Request) {
     }),
   });
 
-  // Fire-and-forget Telegram alert to the team (no-op without bot env).
-  void sendTelegram(
+  // Queue the Telegram alert in the durable outbox (delivered immediately;
+  // retried with backoff if Telegram is unreachable). Also opportunistically
+  // drain any previously-failed notifications now that we have a live request.
+  void enqueueTelegram(
     newPurchaseMessage({
       fullName: application.fullName,
       ref: application.ref,
@@ -125,7 +128,7 @@ export async function POST(req: Request) {
       persons: application.persons,
       email: application.email,
     }),
-  );
+  ).then(() => flushNotifications(5)).catch(() => {});
 
   // Auto-log-in the applicant so the apply → dashboard redirect lands authed.
   const res = NextResponse.json({ id: application.id, ref: application.ref }, { status: 201 });

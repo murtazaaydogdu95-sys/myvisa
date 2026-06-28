@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: myvisa-notifications-drainer
+  namespace: myvisa
+spec:
+  # Drain the notification outbox every 2 minutes (retries failed Telegram sends).
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 90
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: drainer
+              image: curlimages/curl:8.11.1
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: myvisa-secrets
+                      key: CRON_SECRET
+                      optional: true
+              command:
+                - sh
+                - -c
+                - >
+                  curl -fsS -m 60 -H "x-cron-secret: $CRON_SECRET"
+                  http://myvisa-web/api/cron/flush-notifications || true
