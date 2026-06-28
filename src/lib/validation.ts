@@ -11,6 +11,7 @@ export const applicationSchema = z.object({
   visaType: z.string().trim().max(40).optional().default(""),
   visaCenter: z.string().trim().max(80).optional().default(""),
   purpose: z.string().trim().max(80).optional().default(""),
+  persons: z.coerce.number().int().min(1).max(100).optional().default(1),
   travelDate: z.string().trim().max(20).optional().default(""),
   duration: z.string().trim().max(20).optional().default(""),
   documents: z

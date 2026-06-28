@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { countries, destinationOpts, SERVICE_FEE_AMOUNT, SERVICE_PLAN_NAME } from "@/lib/data";
+import { countries, destinationOpts, SERVICE_PLAN_NAME, priceForPersons } from "@/lib/data";
 import { trCountry } from "@/lib/tr";
 import { makeRef, makeTxn, formatDay } from "@/lib/format";
 import { applicationSchema } from "@/lib/validation";
@@ -26,6 +26,9 @@ export async function POST(req: Request) {
   }
   const d = parsed.data;
 
+  // Price is computed server-side from the group size — never trust the client.
+  const pricing = priceForPersons(d.persons);
+
   const base = {
     title: `${trCountry(d.destination)} vizesi`,
     fullName: d.fullName,
@@ -43,7 +46,9 @@ export async function POST(req: Request) {
     travelDate: d.travelDate || null,
     duration: d.duration || null,
     plan: SERVICE_PLAN_NAME,
-    amount: SERVICE_FEE_AMOUNT,
+    persons: pricing.persons,
+    perPerson: pricing.perPersonLabel,
+    amount: pricing.totalLabel,
     paymentMethod: "Card payment",
     txn: makeTxn(),
     paidOn: formatDay(),
@@ -106,7 +111,8 @@ export async function POST(req: Request) {
       ref: application.ref,
       destination: trCountry(application.destination),
       amount: application.amount,
-      plan: application.plan,
+      perPerson: application.perPerson ?? pricing.perPersonLabel,
+      persons: application.persons,
       email: application.email,
     }),
   );

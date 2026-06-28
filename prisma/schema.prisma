@@ -32,7 +32,9 @@ model Application {
   duration        String?
   // commercial
   plan            String   @default("Standard") // Basic | Standard | Premium
-  amount          String // "$89.00"
+  persons         Int      @default(1) // group size for tiered pricing
+  perPerson       String? // per-person fee, e.g. "€335"
+  amount          String // total charged, e.g. "€2.010"
   govFee          String? // "$185.00"
   paymentMethod   String? // "Visa •••• 4242"
   txn             String? // "txn_9f2a71c4"

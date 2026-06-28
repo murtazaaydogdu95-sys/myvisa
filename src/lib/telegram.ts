@@ -45,7 +45,8 @@ export function newPurchaseMessage(p: {
   ref: string;
   destination: string;
   amount: string;
-  plan: string;
+  perPerson: string;
+  persons: number;
   email: string;
 }): string {
   return [
@@ -54,7 +55,8 @@ export function newPurchaseMessage(p: {
     `👤 *Müşteri:* ${esc(p.fullName)}`,
     `📧 *E-posta:* ${esc(p.email)}`,
     `🌍 *Destinasyon:* ${esc(p.destination)}`,
-    `💳 *Tutar:* ${esc(p.amount)} (${esc(p.plan)})`,
+    `👥 *Kişi sayısı:* ${p.persons} (${esc(p.perPerson)}/kişi)`,
+    `💳 *Toplam:* ${esc(p.amount)}`,
     `🔖 *Referans:* ${esc(p.ref)}`,
   ].join("\n");
 }

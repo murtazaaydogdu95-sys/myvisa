@@ -212,6 +212,13 @@ select {
   .mv-dest {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+  .mv-price-grid {
+    grid-template-columns: 1fr !important;
+    max-width: 460px !important;
+  }
+  .mv-fee-features {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
   .mv-compare {
     grid-template-columns: 1fr !important;
   }

@@ -5,6 +5,7 @@ import { VisaChecker } from "@/components/VisaChecker";
 import { Destinations } from "@/components/Destinations";
 import { Faq } from "@/components/Faq";
 import { Icon, type IconName } from "@/components/Icon";
+import { PRICE_TIERS, formatEuro } from "@/lib/data";
 
 const eyebrow = {
   fontSize: 13,
@@ -196,45 +197,72 @@ export default function HomePage() {
         <section id="pricing" style={{ maxWidth: 1200, margin: "0 auto", padding: "64px 24px 40px" }}>
           <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 52px" }}>
             <span style={eyebrow}>Fiyatlandırma</span>
-            <h2 style={sectionH2}>Şeffaf, sabit fiyatlandırma</h2>
+            <h2 style={sectionH2}>Ne kadar kalabalık, o kadar uygun</h2>
             <p style={{ fontSize: 17, color: "#64748b", margin: "14px 0 0", lineHeight: 1.6 }}>
-              Başvuru başına tek ve net ücret. Abonelik yok, sürpriz yok. Resmi harçlar ayrıca gösterilir.
+              Kişi başına net ücret — grubunuz büyüdükçe kişi başı fiyat düşer. Abonelik yok,
+              sürpriz yok. Resmi harçlar ayrıca gösterilir.
             </p>
           </div>
-          <div style={{ maxWidth: 460, margin: "0 auto" }}>
-            <div style={{ background: "linear-gradient(170deg,#0A1F3C,#0c2a4d)", border: "1px solid #0A1F3C", borderRadius: 24, padding: "36px 34px", boxShadow: "0 24px 60px rgba(10,31,60,.3)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: -90, right: -50, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(16,185,129,.18),transparent 70%)" }} />
-              <span style={{ position: "relative", display: "inline-block", background: "#10b981", color: "#fff", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 999, letterSpacing: ".02em" }}>
-                HER ŞEY DAHİL
-              </span>
-              <div style={{ position: "relative", fontSize: 17, fontWeight: 700, color: "#fff", marginTop: 16 }}>MyVisa Tam Hizmet</div>
-              <p style={{ position: "relative", fontSize: 14, color: "#9fb2cc", margin: "6px 0 18px" }}>
-                Tek sabit ücret. Her şey baştan sona halledilir — kademe yok, ek ücret yok.
-              </p>
-              <div style={{ position: "relative", display: "flex", alignItems: "baseline", gap: 5 }}>
-                <span style={{ fontSize: 48, fontWeight: 800, color: "#fff", letterSpacing: "-.02em" }}>€375</span>
-                <span style={{ fontSize: 15, color: "#7e93af" }}>/ başvuru</span>
-              </div>
-              <Link
-                href="/apply"
-                className="mv-btn-emerald"
-                style={{ position: "relative", display: "block", textAlign: "center", width: "100%", margin: "22px 0", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 12, textDecoration: "none", boxShadow: "0 8px 20px rgba(16,185,129,.34)" }}
-              >
-                Başla
-              </Link>
-              <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px" }} className="mv-fee-features">
-                {planFeatures.map((f) => (
-                  <div key={f} style={{ display: "flex", gap: 9, fontSize: 13.5, color: "#d6e3f0", alignItems: "flex-start" }}>
-                    <Icon name="check" size={16} stroke="#10b981" width={2.6} style={{ flex: "none", marginTop: 1 }} />
-                    {f}
+
+          <div className="mv-price-grid" style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, alignItems: "stretch" }}>
+            {PRICE_TIERS.map((t, i) => {
+              const featured = i === 1; // highlight the middle tier
+              return (
+                <div
+                  key={t.label}
+                  style={{
+                    position: "relative",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    background: featured ? "linear-gradient(170deg,#0A1F3C,#0c2a4d)" : "#fff",
+                    border: featured ? "1px solid #0A1F3C" : "1px solid #e8edf4",
+                    borderRadius: 22,
+                    padding: "30px 26px",
+                    boxShadow: featured ? "0 24px 60px rgba(10,31,60,.3)" : "0 1px 3px rgba(10,31,60,.06)",
+                    transform: featured ? "translateY(-6px)" : "none",
+                  }}
+                >
+                  {featured && <div style={{ position: "absolute", top: -90, right: -50, width: 260, height: 260, borderRadius: "50%", background: "radial-gradient(circle,rgba(16,185,129,.2),transparent 70%)" }} />}
+                  {featured && (
+                    <span style={{ position: "relative", alignSelf: "flex-start", display: "inline-block", background: "#10b981", color: "#fff", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 999, letterSpacing: ".03em", marginBottom: 14 }}>
+                      EN POPÜLER
+                    </span>
+                  )}
+                  <div style={{ position: "relative", fontSize: 15, fontWeight: 700, color: featured ? "#9fb2cc" : "#64748b" }}>{t.label}</div>
+                  <div style={{ position: "relative", display: "flex", alignItems: "baseline", gap: 5, marginTop: 10 }}>
+                    <span style={{ fontSize: 44, fontWeight: 800, color: featured ? "#fff" : "#0A1F3C", letterSpacing: "-.02em" }}>{formatEuro(t.perPerson)}</span>
+                    <span style={{ fontSize: 14.5, color: featured ? "#7e93af" : "#94a3b8" }}>/ kişi</span>
                   </div>
-                ))}
-              </div>
-            </div>
-            <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", marginTop: 16 }}>
-              Resmi / konsolosluk harçları ayrıca ödenir ve gideceğiniz ülkeye göre değişir.
-            </p>
+                  <p style={{ position: "relative", fontSize: 13, color: featured ? "#9fb2cc" : "#94a3b8", margin: "8px 0 0", lineHeight: 1.5 }}>
+                    {t.max === Infinity ? `${t.min} kişi ve üzeri gruplar için kişi başı ücret.` : `${t.min}–${t.max} kişilik gruplar için kişi başı ücret.`}
+                  </p>
+                  <Link
+                    href="/apply"
+                    className="mv-btn-emerald"
+                    style={{ position: "relative", display: "block", textAlign: "center", width: "100%", margin: "20px 0 0", background: featured ? "#10b981" : "#0A1F3C", color: "#fff", fontWeight: 700, fontSize: 14.5, padding: 13, borderRadius: 11, textDecoration: "none", boxShadow: featured ? "0 8px 20px rgba(16,185,129,.34)" : "none" }}
+                  >
+                    Başla
+                  </Link>
+                </div>
+              );
+            })}
           </div>
+
+          <div style={{ maxWidth: 1000, margin: "28px auto 0", background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: "26px 28px", boxShadow: "0 1px 3px rgba(10,31,60,.05)" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", color: "#10b981", marginBottom: 16 }}>Her pakette dahil</div>
+            <div className="mv-fee-features" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px 24px" }}>
+              {planFeatures.map((f) => (
+                <div key={f} style={{ display: "flex", gap: 9, fontSize: 13.5, color: "#46566e", alignItems: "flex-start" }}>
+                  <Icon name="check" size={16} stroke="#10b981" width={2.6} style={{ flex: "none", marginTop: 1 }} />
+                  {f}
+                </div>
+              ))}
+            </div>
+          </div>
+          <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", marginTop: 16 }}>
+            Resmi / konsolosluk harçları ayrıca ödenir ve gideceğiniz ülkeye göre değişir.
+          </p>
         </section>
 
         {/* FAQ */}

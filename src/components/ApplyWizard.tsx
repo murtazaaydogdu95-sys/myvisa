@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
-import { countries, destinationOpts, purposes, SERVICE_FEE, SERVICE_FEE_AMOUNT, SERVICE_PLAN_NAME } from "@/lib/data";
+import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons } from "@/lib/data";
 import { trCountry, purposeTR } from "@/lib/tr";
 import { useToast } from "./Toast";
 
 type Wizard = {
   fullName: string; email: string; dob: string; nationality: string; passport: string;
-  destination: string; purpose: string; travelDate: string; duration: string;
+  destination: string; purpose: string; persons: string; travelDate: string; duration: string;
   cardName: string; cardNumber: string; expiry: string; cvv: string;
 };
 
@@ -111,7 +111,7 @@ export function ApplyWizard() {
   const [doneRef, setDoneRef] = useState<string | null>(null);
   const [w, setW] = useState<Wizard>({
     fullName: "", email: "", dob: "", nationality: "", passport: "",
-    destination: "", purpose: "", travelDate: "", duration: "",
+    destination: "", purpose: "", persons: "1", travelDate: "", duration: "",
     cardName: "", cardNumber: "", expiry: "", cvv: "",
   });
 
@@ -133,6 +133,8 @@ export function ApplyWizard() {
     if (n === 2) {
       if (!w.destination) e.destination = "Bir destinasyon seçin";
       if (!w.purpose) e.purpose = "Bir seyahat amacı seçin";
+      const persons = Number(w.persons);
+      if (!w.persons || !Number.isInteger(persons) || persons < 1) e.persons = "Kişi sayısı en az 1 olmalı";
       if (!w.travelDate) e.travelDate = "Seyahat tarihinizi seçin";
       if (!w.duration.trim()) e.duration = "Kaç gün kalacağınızı girin";
     }
@@ -203,6 +205,7 @@ export function ApplyWizard() {
         body: JSON.stringify({
           fullName: w.fullName, email: w.email, dob: w.dob, nationality: w.nationality,
           passport: w.passport, destination: w.destination, purpose: w.purpose,
+          persons: Number(w.persons) || 1,
           travelDate: w.travelDate, duration: w.duration, plan: SERVICE_PLAN_NAME,
           documents: uploads.map((u) => ({ name: u.name, mime: u.mime, dataBase64: u.dataBase64 })),
         }),
@@ -322,7 +325,7 @@ export function ApplyWizard() {
             className="mv-btn-emerald"
             style={{ flex: 1, background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 12, cursor: submitting ? "wait" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: submitting ? 0.75 : 1, boxShadow: "0 8px 20px rgba(16,185,129,.3)" }}
           >
-            {step === 5 ? (submitting ? "İşleniyor…" : `${SERVICE_FEE} öde ve gönder`) : "Devam et"}
+            {step === 5 ? (submitting ? "İşleniyor…" : `${priceForPersons(Number(w.persons)).totalLabel} öde ve gönder`) : "Devam et"}
             {step < 5 && <Icon name="arrowRight" size={17} stroke="#fff" width={2.4} />}
           </button>
         </div>
@@ -416,8 +419,36 @@ function StepTravel({ w, set, errors }: StepProps) {
             <input className="mv-input" style={inputStyle} value={w.duration} onChange={(e) => set("duration", e.target.value)} placeholder="örn. 21" inputMode="numeric" />
           </Field>
         </div>
+        <Field label="Kaç kişi başvuracak?" error={errors.persons}>
+          <input
+            className="mv-input"
+            style={inputStyle}
+            value={w.persons}
+            onChange={(e) => set("persons", e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="örn. 2"
+            inputMode="numeric"
+          />
+          <PersonsHint persons={w.persons} />
+        </Field>
       </div>
     </>
+  );
+}
+
+// Live per-person + total breakdown shown under the group-size input.
+function PersonsHint({ persons }: { persons: string }) {
+  const n = Number(persons);
+  if (!persons || !Number.isInteger(n) || n < 1) return null;
+  const p = priceForPersons(n);
+  return (
+    <div style={{ marginTop: 8, fontSize: 13, color: "#059669", fontWeight: 600 }}>
+      {p.perPersonLabel}/kişi × {p.persons} = <span style={{ color: "#065f46", fontWeight: 800 }}>{p.totalLabel} toplam</span>
+      {n < 10 && (
+        <span style={{ color: "#94a3b8", fontWeight: 500 }}>
+          {" "}· {n < 5 ? "5+ kişide €335/kişi" : "10+ kişide €285/kişi"}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -470,6 +501,7 @@ function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
     ["Ad soyad", fmt(w.fullName)], ["E-posta", fmt(w.email)], ["Doğum tarihi", fmtDate(w.dob)],
     ["Uyruk", w.nationality ? trCountry(w.nationality) : "—"], ["Pasaport no.", fmt(w.passport)], ["Destinasyon", w.destination ? trCountry(w.destination) : "—"],
     ["Amaç", w.purpose ? (purposeTR[w.purpose] ?? w.purpose) : "—"], ["Seyahat tarihi", fmtDate(w.travelDate)], ["Kalış süresi", w.duration ? `${w.duration} gün` : "—"],
+    ["Kişi sayısı", w.persons ? `${Number(w.persons)} kişi` : "—"],
   ];
   return (
     <>
@@ -490,7 +522,7 @@ function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
           ))}
         </div>
       </div>
-      <FeeSummary />
+      <FeeSummary persons={w.persons} />
     </>
   );
 }
@@ -501,7 +533,7 @@ function StepPayment({
   return (
     <>
       <StepHeader title="Ödeme" sub="Tek seferlik MyVisa hizmet ücretini ödeyin. Resmi / konsolosluk harçları ayrıca ödenir." />
-      <FeeSummary />
+      <FeeSummary persons={w.persons} />
       <div style={{ display: "grid", gap: 16, marginTop: 22 }}>
         <Field label="Kart üzerindeki ad" error={errors.cardName}>
           <input className="mv-input" style={inputStyle} value={w.cardName} onChange={(e) => set("cardName", e.target.value)} placeholder="Ad soyad" />
@@ -522,14 +554,17 @@ function StepPayment({
   );
 }
 
-function FeeSummary() {
+function FeeSummary({ persons }: { persons: string }) {
+  const p = priceForPersons(Number(persons) || 1);
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: "16px 18px" }}>
       <div>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: "#065f46" }}>MyVisa Tam Hizmet</div>
-        <div style={{ fontSize: 12.5, color: "#059669", marginTop: 2 }}>Tek sabit ücret — her şey baştan sona halledilir.</div>
+        <div style={{ fontSize: 12.5, color: "#059669", marginTop: 2 }}>
+          {p.perPersonLabel}/kişi × {p.persons} kişi — her şey baştan sona halledilir.
+        </div>
       </div>
-      <span style={{ fontSize: 24, fontWeight: 800, color: "#065f46", letterSpacing: "-.02em" }}>{SERVICE_FEE_AMOUNT}</span>
+      <span style={{ fontSize: 24, fontWeight: 800, color: "#065f46", letterSpacing: "-.02em" }}>{p.totalLabel}</span>
     </div>
   );
 }

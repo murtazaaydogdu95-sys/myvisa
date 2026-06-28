@@ -85,7 +85,10 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: badge.dot }} />{statusTR[a.status] ?? a.status}
               </span>
             </div>
-            <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 10 }}>{planTR[a.plan] ?? a.plan} · {a.paymentMethod ?? "—"}</div>
+            <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 10 }}>
+              {planTR[a.plan] ?? a.plan} · {a.paymentMethod ?? "—"}
+              {a.perPerson ? ` · ${a.persons} kişi × ${a.perPerson}` : ""}
+            </div>
             <PaymentControl id={a.id} current={a.status} action={setPaymentStatus} />
           </Card>
 

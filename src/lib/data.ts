@@ -150,10 +150,39 @@ export const statuses = [
   "Completed",
 ] as const;
 
-// Single flat MyVisa service fee (one all-inclusive plan).
-export const SERVICE_FEE = "€375";
-export const SERVICE_FEE_AMOUNT = "€375.00";
 export const SERVICE_PLAN_NAME = "Full Service";
+
+// Group-size pricing: the more applicants travel together, the lower the
+// per-person fee. Ranges are contiguous (no gaps); the last tier is open-ended.
+export type PriceTier = { min: number; max: number; perPerson: number; label: string };
+export const PRICE_TIERS: PriceTier[] = [
+  { min: 1, max: 4, perPerson: 375, label: "1–4 kişi" },
+  { min: 5, max: 9, perPerson: 335, label: "5–9 kişi" },
+  { min: 10, max: Infinity, perPerson: 285, label: "10+ kişi" },
+];
+
+// Turkish-style euro formatting (e.g. 2010 -> "€2.010").
+export const formatEuro = (n: number) => `€${Math.round(n).toLocaleString("tr-TR")}`;
+
+export function tierForPersons(persons: number): PriceTier {
+  const p = Math.max(1, Math.floor(persons || 1));
+  return PRICE_TIERS.find((t) => p >= t.min && p <= t.max) ?? PRICE_TIERS[PRICE_TIERS.length - 1];
+}
+
+// Per-person fee + total for a given group size, with formatted strings.
+export function priceForPersons(persons: number) {
+  const p = Math.max(1, Math.floor(persons || 1));
+  const tier = tierForPersons(p);
+  const total = tier.perPerson * p;
+  return {
+    persons: p,
+    perPerson: tier.perPerson,
+    total,
+    tier,
+    perPersonLabel: formatEuro(tier.perPerson),
+    totalLabel: formatEuro(total),
+  };
+}
 
 // Status badge palette (admin table + dialog), keyed by payment status.
 export const statusBadge: Record<
