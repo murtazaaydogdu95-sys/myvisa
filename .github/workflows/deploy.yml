@@ -106,6 +106,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.MYVISA_RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.MYVISA_EMAIL_FROM }}
           ADMIN_EMAIL: ${{ secrets.MYVISA_ADMIN_EMAIL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.MYVISA_TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.MYVISA_TELEGRAM_CHAT_ID }}
         run: |
           umask 077
           DATABASE_URL="postgresql://myvisa:${DB_PASSWORD}@myvisa-postgres:5432/myvisa?schema=public"
@@ -125,6 +127,8 @@ jobs:
             RESEND_API_KEY: $(printf '%s' "$RESEND_API_KEY" | base64 | tr -d '\n')
             EMAIL_FROM: $(printf '%s' "$EMAIL_FROM" | base64 | tr -d '\n')
             ADMIN_EMAIL: $(printf '%s' "$ADMIN_EMAIL" | base64 | tr -d '\n')
+            TELEGRAM_BOT_TOKEN: $(printf '%s' "$TELEGRAM_BOT_TOKEN" | base64 | tr -d '\n')
+            TELEGRAM_CHAT_ID: $(printf '%s' "$TELEGRAM_CHAT_ID" | base64 | tr -d '\n')
           EOF
 
           # Ensure namespace exists, then pipe the Secret through SSH stdin into kubectl.

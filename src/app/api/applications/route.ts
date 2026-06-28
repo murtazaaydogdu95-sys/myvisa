@@ -6,6 +6,7 @@ import { trCountry } from "@/lib/tr";
 import { makeRef, makeTxn, formatDay } from "@/lib/format";
 import { applicationSchema } from "@/lib/validation";
 import { sendEmail, applicationConfirmationEmail } from "@/lib/email";
+import { sendTelegram, newPurchaseMessage } from "@/lib/telegram";
 import { rateLimit } from "@/lib/rate-limit";
 import { customerToken } from "@/lib/auth-token";
 
@@ -97,6 +98,18 @@ export async function POST(req: Request) {
       destination: trCountry(application.destination),
     }),
   });
+
+  // Fire-and-forget Telegram alert to the team (no-op without bot env).
+  void sendTelegram(
+    newPurchaseMessage({
+      fullName: application.fullName,
+      ref: application.ref,
+      destination: trCountry(application.destination),
+      amount: application.amount,
+      plan: application.plan,
+      email: application.email,
+    }),
+  );
 
   // Auto-log-in the applicant so the apply → dashboard redirect lands authed.
   const res = NextResponse.json({ id: application.id, ref: application.ref }, { status: 201 });
