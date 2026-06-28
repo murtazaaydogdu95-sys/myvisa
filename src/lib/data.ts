@@ -5,23 +5,53 @@ export type Country = { name: string; code: string; url: string };
 
 const flag = (code: string) => `https://flagcdn.com/w40/${code}.png`;
 
-export const countries: Country[] = [
-  { name: "United Kingdom", code: "gb", url: flag("gb") },
-  { name: "United States", code: "us", url: flag("us") },
-  { name: "India", code: "in", url: flag("in") },
-  { name: "Nigeria", code: "ng", url: flag("ng") },
-  { name: "Germany", code: "de", url: flag("de") },
-  { name: "Canada", code: "ca", url: flag("ca") },
-  { name: "Australia", code: "au", url: flag("au") },
-  { name: "Brazil", code: "br", url: flag("br") },
-  { name: "Philippines", code: "ph", url: flag("ph") },
-  { name: "South Africa", code: "za", url: flag("za") },
-  { name: "United Arab Emirates", code: "ae", url: flag("ae") },
-  { name: "Japan", code: "jp", url: flag("jp") },
-  { name: "France", code: "fr", url: flag("fr") },
-  { name: "Pakistan", code: "pk", url: flag("pk") },
-  { name: "Kenya", code: "ke", url: flag("ke") },
+// Full list of world nationalities (Turkish names) for the "Uyruk" dropdown.
+// Names are Turkish so they display directly (trCountry falls back to the name);
+// `code` drives the flag lookup. Sorted by Turkish locale at render time.
+const C: [string, string][] = [
+  ["Afganistan", "af"], ["Almanya", "de"], ["Amerika Birleşik Devletleri", "us"], ["Andorra", "ad"],
+  ["Angola", "ao"], ["Antigua ve Barbuda", "ag"], ["Arjantin", "ar"], ["Arnavutluk", "al"],
+  ["Avustralya", "au"], ["Avusturya", "at"], ["Azerbaycan", "az"], ["Bahamalar", "bs"], ["Bahreyn", "bh"],
+  ["Bangladeş", "bd"], ["Barbados", "bb"], ["Belçika", "be"], ["Belize", "bz"], ["Benin", "bj"],
+  ["Beyaz Rusya", "by"], ["Bhutan", "bt"], ["Birleşik Arap Emirlikleri", "ae"], ["Birleşik Krallık", "gb"],
+  ["Bolivya", "bo"], ["Bosna-Hersek", "ba"], ["Botsvana", "bw"], ["Brezilya", "br"], ["Brunei", "bn"],
+  ["Bulgaristan", "bg"], ["Burkina Faso", "bf"], ["Burundi", "bi"], ["Cabo Verde", "cv"], ["Cezayir", "dz"],
+  ["Cibuti", "dj"], ["Çad", "td"], ["Çekya", "cz"], ["Çin", "cn"], ["Danimarka", "dk"],
+  ["Doğu Timor", "tl"], ["Dominik Cumhuriyeti", "do"], ["Dominika", "dm"], ["Ekvador", "ec"],
+  ["Ekvator Ginesi", "gq"], ["El Salvador", "sv"], ["Endonezya", "id"], ["Eritre", "er"], ["Ermenistan", "am"],
+  ["Estonya", "ee"], ["Esvatini", "sz"], ["Etiyopya", "et"], ["Fas", "ma"], ["Fiji", "fj"],
+  ["Fildişi Sahili", "ci"], ["Filipinler", "ph"], ["Filistin", "ps"], ["Finlandiya", "fi"], ["Fransa", "fr"],
+  ["Gabon", "ga"], ["Gambiya", "gm"], ["Gana", "gh"], ["Gine", "gn"], ["Gine-Bissau", "gw"], ["Grenada", "gd"],
+  ["Guatemala", "gt"], ["Guyana", "gy"], ["Güney Afrika", "za"], ["Güney Kore", "kr"], ["Güney Sudan", "ss"],
+  ["Gürcistan", "ge"], ["Haiti", "ht"], ["Hindistan", "in"], ["Hırvatistan", "hr"], ["Hollanda", "nl"],
+  ["Honduras", "hn"], ["Irak", "iq"], ["İran", "ir"], ["İrlanda", "ie"], ["İspanya", "es"], ["İsrail", "il"],
+  ["İsveç", "se"], ["İsviçre", "ch"], ["İtalya", "it"], ["İzlanda", "is"], ["Jamaika", "jm"], ["Japonya", "jp"],
+  ["Kamboçya", "kh"], ["Kamerun", "cm"], ["Kanada", "ca"], ["Karadağ", "me"], ["Katar", "qa"],
+  ["Kazakistan", "kz"], ["Kenya", "ke"], ["Kıbrıs", "cy"], ["Kırgızistan", "kg"], ["Kiribati", "ki"],
+  ["Kolombiya", "co"], ["Komorlar", "km"], ["Kongo Cumhuriyeti", "cg"], ["Kongo Demokratik Cumhuriyeti", "cd"],
+  ["Kosova", "xk"], ["Kosta Rika", "cr"], ["Kuveyt", "kw"], ["Kuzey Kore", "kp"], ["Kuzey Makedonya", "mk"],
+  ["Küba", "cu"], ["Laos", "la"], ["Lesotho", "ls"], ["Letonya", "lv"], ["Liberya", "lr"], ["Libya", "ly"],
+  ["Lihtenştayn", "li"], ["Litvanya", "lt"], ["Lübnan", "lb"], ["Lüksemburg", "lu"], ["Macaristan", "hu"],
+  ["Madagaskar", "mg"], ["Malavi", "mw"], ["Maldivler", "mv"], ["Malezya", "my"], ["Mali", "ml"],
+  ["Malta", "mt"], ["Marshall Adaları", "mh"], ["Mauritius", "mu"], ["Meksika", "mx"], ["Mısır", "eg"],
+  ["Mikronezya", "fm"], ["Moğolistan", "mn"], ["Moldova", "md"], ["Monako", "mc"], ["Moritanya", "mr"],
+  ["Mozambik", "mz"], ["Myanmar", "mm"], ["Namibya", "na"], ["Nauru", "nr"], ["Nepal", "np"], ["Nijer", "ne"],
+  ["Nijerya", "ng"], ["Nikaragua", "ni"], ["Norveç", "no"], ["Orta Afrika Cumhuriyeti", "cf"],
+  ["Özbekistan", "uz"], ["Pakistan", "pk"], ["Palau", "pw"], ["Panama", "pa"], ["Papua Yeni Gine", "pg"],
+  ["Paraguay", "py"], ["Peru", "pe"], ["Polonya", "pl"], ["Portekiz", "pt"], ["Romanya", "ro"], ["Ruanda", "rw"],
+  ["Rusya", "ru"], ["Saint Kitts ve Nevis", "kn"], ["Saint Lucia", "lc"], ["Saint Vincent ve Grenadinler", "vc"],
+  ["Samoa", "ws"], ["San Marino", "sm"], ["Sao Tome ve Principe", "st"], ["Senegal", "sn"], ["Seyşeller", "sc"],
+  ["Sırbistan", "rs"], ["Sierra Leone", "sl"], ["Singapur", "sg"], ["Slovakya", "sk"], ["Slovenya", "si"],
+  ["Solomon Adaları", "sb"], ["Somali", "so"], ["Sri Lanka", "lk"], ["Sudan", "sd"], ["Surinam", "sr"],
+  ["Suriye", "sy"], ["Suudi Arabistan", "sa"], ["Şili", "cl"], ["Tacikistan", "tj"], ["Tanzanya", "tz"],
+  ["Tayland", "th"], ["Tayvan", "tw"], ["Togo", "tg"], ["Tonga", "to"], ["Trinidad ve Tobago", "tt"],
+  ["Tunus", "tn"], ["Türkiye", "tr"], ["Türkmenistan", "tm"], ["Tuvalu", "tv"], ["Uganda", "ug"],
+  ["Ukrayna", "ua"], ["Umman", "om"], ["Uruguay", "uy"], ["Ürdün", "jo"], ["Vanuatu", "vu"], ["Vatikan", "va"],
+  ["Venezuela", "ve"], ["Vietnam", "vn"], ["Yemen", "ye"], ["Yeni Zelanda", "nz"], ["Yunanistan", "gr"],
+  ["Zambiya", "zm"], ["Zimbabve", "zw"],
 ];
+
+export const countries: Country[] = C.map(([name, code]) => ({ name, code, url: flag(code) }));
 
 // MyVisa currently serves applicants applying from Turkey only.
 export const originCountries: Country[] = [

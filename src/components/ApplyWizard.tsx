@@ -425,7 +425,7 @@ function StepPersonal({ w, set, errors }: StepProps) {
           <Field label="Uyruk" error={errors.nationality}>
             <select className="mv-input" style={selectStyle} value={w.nationality} onChange={(e) => set("nationality", e.target.value)}>
               <option value="">Ülkenizi seçin</option>
-              {countries.map((c) => <option key={c.code} value={c.name}>{trCountry(c.name)}</option>)}
+              {[...countries].sort((a, b) => a.name.localeCompare(b.name, "tr")).map((c) => <option key={c.code} value={c.name}>{trCountry(c.name)}</option>)}
             </select>
           </Field>
           <Field label="Çalışma durumu" error={errors.employment}>
