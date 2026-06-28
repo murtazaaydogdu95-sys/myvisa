@@ -80,6 +80,18 @@ export const purposes = [
   "Medical treatment",
 ] as const;
 
+// Applicant-profile option lists (Turkish-only site → stored as shown).
+export const genders = ["Erkek", "Kadın", "Diğer"] as const;
+export const employmentStatuses = [
+  "Çalışan",
+  "Serbest meslek",
+  "İşsiz",
+  "Emekli",
+  "Öğrenci",
+] as const;
+export const sponsors = ["Kendim", "Aile", "Ev sahibi", "İşveren"] as const;
+export const accommodations = ["Otel", "Ev sahibi"] as const;
+
 export type Destination = {
   name: string;
   from: string;

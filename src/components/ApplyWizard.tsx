@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
-import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons } from "@/lib/data";
+import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons, genders, employmentStatuses, sponsors, accommodations, visaCenters } from "@/lib/data";
 import { trCountry, purposeTR } from "@/lib/tr";
 import { useToast } from "./Toast";
 
 type Wizard = {
-  fullName: string; email: string; dob: string; nationality: string; passport: string;
-  destination: string; purpose: string; persons: string; travelDate: string; duration: string;
+  fullName: string; email: string; phone: string; dob: string; gender: string;
+  nationality: string; passport: string; passportExpiry: string; employment: string;
+  addressLine1: string; addressLine2: string; city: string; state: string;
+  destination: string; visaCenter: string; purpose: string; sponsor: string;
+  accommodation: string; hasChildren: string; persons: string; travelDate: string; duration: string;
   cardName: string; cardNumber: string; expiry: string; cvv: string;
 };
 
@@ -124,8 +127,11 @@ export function ApplyWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [doneRef, setDoneRef] = useState<string | null>(null);
   const [w, setW] = useState<Wizard>({
-    fullName: "", email: "", dob: "", nationality: "", passport: "",
-    destination: "", purpose: "", persons: "1", travelDate: "", duration: "",
+    fullName: "", email: "", phone: "", dob: "", gender: "",
+    nationality: "", passport: "", passportExpiry: "", employment: "",
+    addressLine1: "", addressLine2: "", city: "", state: "",
+    destination: "", visaCenter: "", purpose: "", sponsor: "",
+    accommodation: "", hasChildren: "", persons: "1", travelDate: "", duration: "",
     cardName: "", cardNumber: "", expiry: "", cvv: "",
   });
 
@@ -140,13 +146,23 @@ export function ApplyWizard() {
     if (n === 1) {
       if (!w.fullName.trim()) e.fullName = "Lütfen adınızı ve soyadınızı girin";
       if (!/^\S+@\S+\.\S+$/.test(w.email)) e.email = "Geçerli bir e-posta adresi girin";
+      if (!w.phone.trim()) e.phone = "Telefon numaranızı girin";
       if (!w.dob) e.dob = "Doğum tarihi gereklidir";
+      if (!w.gender) e.gender = "Cinsiyet seçin";
       if (!w.nationality) e.nationality = "Uyruğunuzu seçin";
       if (!w.passport.trim()) e.passport = "Pasaport numaranızı girin";
+      if (!w.passportExpiry) e.passportExpiry = "Pasaport geçerlilik tarihini seçin";
+      if (!w.employment) e.employment = "Çalışma durumunuzu seçin";
+      if (!w.addressLine1.trim()) e.addressLine1 = "Adresinizi girin";
+      if (!w.city.trim()) e.city = "Şehrinizi girin";
     }
     if (n === 2) {
       if (!w.destination) e.destination = "Bir destinasyon seçin";
+      if (!w.visaCenter) e.visaCenter = "Bir vize merkezi seçin";
       if (!w.purpose) e.purpose = "Bir seyahat amacı seçin";
+      if (!w.sponsor) e.sponsor = "Seyahatinizi kimin karşıladığını seçin";
+      if (!w.accommodation) e.accommodation = "Konaklama türünü seçin";
+      if (!w.hasChildren) e.hasChildren = "Lütfen seçin";
       const persons = Number(w.persons);
       if (!w.persons || !Number.isInteger(persons) || persons < 1) e.persons = "Kişi sayısı en az 1 olmalı";
       if (!w.travelDate) e.travelDate = "Seyahat tarihinizi seçin";
@@ -217,8 +233,12 @@ export function ApplyWizard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fullName: w.fullName, email: w.email, dob: w.dob, nationality: w.nationality,
-          passport: w.passport, destination: w.destination, purpose: w.purpose,
+          fullName: w.fullName, email: w.email, phone: w.phone, dob: w.dob, gender: w.gender,
+          nationality: w.nationality, passport: w.passport, passportExpiry: w.passportExpiry,
+          employment: w.employment, addressLine1: w.addressLine1, addressLine2: w.addressLine2,
+          city: w.city, state: w.state, destination: w.destination, visaCenter: w.visaCenter,
+          purpose: w.purpose, sponsor: w.sponsor, accommodation: w.accommodation,
+          hasChildren: w.hasChildren === "Evet",
           persons: Number(w.persons) || 1,
           travelDate: w.travelDate, duration: w.duration, plan: SERVICE_PLAN_NAME,
           documents: uploads.map((u) => ({ name: u.name, mime: u.mime, dataBase64: u.dataBase64 })),
@@ -386,8 +406,19 @@ function StepPersonal({ w, set, errors }: StepProps) {
           <Field label="E-posta adresi" error={errors.email}>
             <input className="mv-input" style={inputStyle} value={w.email} onChange={(e) => set("email", e.target.value)} placeholder="siz@eposta.com" />
           </Field>
+          <Field label="Telefon" error={errors.phone}>
+            <input className="mv-input" style={inputStyle} value={w.phone} onChange={(e) => set("phone", e.target.value)} placeholder="örn. +90 5xx xxx xx xx" inputMode="tel" />
+          </Field>
+        </div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <Field label="Doğum tarihi" error={errors.dob}>
             <DropdownDateField value={w.dob} onChange={(v) => set("dob", v)} mode="past" />
+          </Field>
+          <Field label="Cinsiyet" error={errors.gender}>
+            <select className="mv-input" style={selectStyle} value={w.gender} onChange={(e) => set("gender", e.target.value)}>
+              <option value="">Seçin</option>
+              {genders.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
           </Field>
         </div>
         <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -397,8 +428,37 @@ function StepPersonal({ w, set, errors }: StepProps) {
               {countries.map((c) => <option key={c.code} value={c.name}>{trCountry(c.name)}</option>)}
             </select>
           </Field>
+          <Field label="Çalışma durumu" error={errors.employment}>
+            <select className="mv-input" style={selectStyle} value={w.employment} onChange={(e) => set("employment", e.target.value)}>
+              <option value="">Seçin</option>
+              {employmentStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <Field label="Pasaport numarası" error={errors.passport}>
             <input className="mv-input" style={inputStyle} value={w.passport} onChange={(e) => set("passport", e.target.value)} placeholder="örn. P4521889" />
+          </Field>
+          <Field label="Pasaport geçerlilik tarihi" error={errors.passportExpiry}>
+            <DropdownDateField value={w.passportExpiry} onChange={(v) => set("passportExpiry", v)} mode="future" />
+          </Field>
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "#94a3b8", marginTop: 6 }}>Adres</div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <Field label="Adres satırı 1" error={errors.addressLine1}>
+            <input className="mv-input" style={inputStyle} value={w.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} placeholder="Mahalle, cadde, no" />
+          </Field>
+          <Field label="Adres satırı 2 (isteğe bağlı)">
+            <input className="mv-input" style={inputStyle} value={w.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} placeholder="Daire, kat vb." />
+          </Field>
+        </div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <Field label="Şehir" error={errors.city}>
+            <input className="mv-input" style={inputStyle} value={w.city} onChange={(e) => set("city", e.target.value)} placeholder="örn. İstanbul" />
+          </Field>
+          <Field label="İl / Eyalet (isteğe bağlı)">
+            <input className="mv-input" style={inputStyle} value={w.state} onChange={(e) => set("state", e.target.value)} placeholder="örn. Marmara" />
           </Field>
         </div>
       </div>
@@ -407,6 +467,7 @@ function StepPersonal({ w, set, errors }: StepProps) {
 }
 
 function StepTravel({ w, set, errors }: StepProps) {
+  const centers = visaCenters.Turkey ?? [];
   return (
     <>
       <StepHeader title="Seyahatiniz" sub="Nereye ve neden gidiyorsunuz? Kontrol listenizi buna göre uyarlıyoruz." />
@@ -418,10 +479,39 @@ function StepTravel({ w, set, errors }: StepProps) {
               {destinationOpts.map((c) => <option key={c.code} value={c.name}>{trCountry(c.name)}</option>)}
             </select>
           </Field>
+          <Field label="Vize başvuru merkezi" error={errors.visaCenter}>
+            <select className="mv-input" style={selectStyle} value={w.visaCenter} onChange={(e) => set("visaCenter", e.target.value)}>
+              <option value="">Bir şehir seçin</option>
+              {centers.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <Field label="Seyahat amacı" error={errors.purpose}>
             <select className="mv-input" style={selectStyle} value={w.purpose} onChange={(e) => set("purpose", e.target.value)}>
               <option value="">Bir amaç seçin</option>
               {purposes.map((p) => <option key={p} value={p}>{purposeTR[p] ?? p}</option>)}
+            </select>
+          </Field>
+          <Field label="Seyahatinizi kim karşılıyor?" error={errors.sponsor}>
+            <select className="mv-input" style={selectStyle} value={w.sponsor} onChange={(e) => set("sponsor", e.target.value)}>
+              <option value="">Seçin</option>
+              {sponsors.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <Field label="Nerede kalacaksınız?" error={errors.accommodation}>
+            <select className="mv-input" style={selectStyle} value={w.accommodation} onChange={(e) => set("accommodation", e.target.value)}>
+              <option value="">Seçin</option>
+              {accommodations.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </Field>
+          <Field label="Yanınızda çocuk seyahat ediyor mu?" error={errors.hasChildren}>
+            <select className="mv-input" style={selectStyle} value={w.hasChildren} onChange={(e) => set("hasChildren", e.target.value)}>
+              <option value="">Seçin</option>
+              <option value="Hayır">Hayır</option>
+              <option value="Evet">Evet</option>
             </select>
           </Field>
         </div>
@@ -511,10 +601,14 @@ function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
     if (p.length !== 3) return fb;
     return `${Number(p[2])} ${TR_MONTHS[Number(p[1]) - 1] ?? p[1]} ${p[0]}`;
   };
+  const addr = [w.addressLine1, w.addressLine2, w.city, w.state].filter((p) => p && p.trim()).join(", ");
   const rows: [string, string][] = [
-    ["Ad soyad", fmt(w.fullName)], ["E-posta", fmt(w.email)], ["Doğum tarihi", fmtDate(w.dob)],
-    ["Uyruk", w.nationality ? trCountry(w.nationality) : "—"], ["Pasaport no.", fmt(w.passport)], ["Destinasyon", w.destination ? trCountry(w.destination) : "—"],
-    ["Amaç", w.purpose ? (purposeTR[w.purpose] ?? w.purpose) : "—"], ["Seyahat tarihi", fmtDate(w.travelDate)], ["Kalış süresi", w.duration ? `${w.duration} gün` : "—"],
+    ["Ad soyad", fmt(w.fullName)], ["E-posta", fmt(w.email)], ["Telefon", fmt(w.phone)],
+    ["Doğum tarihi", fmtDate(w.dob)], ["Cinsiyet", fmt(w.gender)], ["Uyruk", w.nationality ? trCountry(w.nationality) : "—"],
+    ["Pasaport no.", fmt(w.passport)], ["Pasaport geçerlilik", fmtDate(w.passportExpiry)], ["Çalışma durumu", fmt(w.employment)],
+    ["Adres", fmt(addr)], ["Destinasyon", w.destination ? trCountry(w.destination) : "—"], ["Vize merkezi", fmt(w.visaCenter)],
+    ["Amaç", w.purpose ? (purposeTR[w.purpose] ?? w.purpose) : "—"], ["Karşılayan", fmt(w.sponsor)], ["Konaklama", fmt(w.accommodation)],
+    ["Çocuk seyahati", fmt(w.hasChildren)], ["Seyahat tarihi", fmtDate(w.travelDate)], ["Kalış süresi", w.duration ? `${w.duration} gün` : "—"],
     ["Kişi sayısı", w.persons ? `${Number(w.persons)} kişi` : "—"],
   ];
   return (

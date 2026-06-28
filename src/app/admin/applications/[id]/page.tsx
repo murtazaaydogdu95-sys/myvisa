@@ -100,10 +100,18 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
               <Cell label="Resmi harç" value={a.govFee ?? "—"} />
               <Cell label="Seyahat tarihi" value={a.travelDate ?? "—"} />
               <Cell label="Kalış süresi" value={a.duration ?? "—"} />
+              <Cell label="Amaç" value={a.purpose ?? "—"} />
+              <Cell label="Karşılayan" value={a.sponsor ?? "—"} />
+              <Cell label="Konaklama" value={a.accommodation ?? "—"} />
+              <Cell label="Çocuk seyahati" value={a.hasChildren ? "Evet" : "Hayır"} />
               <Cell label="Telefon" value={a.phone ?? "—"} />
-              <Cell label="Pasaport no." value={a.passport ?? "—"} />
               <Cell label="E-posta" value={a.email} />
+              <Cell label="Cinsiyet" value={a.gender ?? "—"} />
               <Cell label="Uyruk" value={trCountry(a.nationality)} />
+              <Cell label="Pasaport no." value={a.passport ?? "—"} />
+              <Cell label="Pasaport geçerlilik" value={a.passportExpiry ?? "—"} />
+              <Cell label="Çalışma durumu" value={a.employment ?? "—"} />
+              <Cell label="Adres" value={[a.addressLine1, a.addressLine2, a.city, a.state].filter(Boolean).join(", ") || "—"} />
             </Grid>
           </Card>
         </div>

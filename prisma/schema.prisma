@@ -20,14 +20,25 @@ model Application {
   email           String
   phone           String?
   dob             String?
+  gender          String? // Erkek | Kadın | Diğer
   nationality     String
   nationalityFlag String // ISO-2 code for flagcdn, e.g. "ng"
   passport        String?
+  passportExpiry  String? // passport valid-until date
+  employment      String? // Çalışan | Serbest meslek | İşsiz | Emekli | Öğrenci
+  // address
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  state           String?
   // trip
   destination     String
   destinationFlag String // ISO-2 code, e.g. "us" / "eu"
   visaType        String
   purpose         String?
+  sponsor         String? // Kendim | Aile | Ev sahibi | İşveren
+  accommodation   String? // Otel | Ev sahibi
+  hasChildren     Boolean  @default(false)
   travelDate      String?
   duration        String?
   // commercial
