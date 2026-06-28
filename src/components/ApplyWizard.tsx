@@ -46,10 +46,19 @@ const TR_MONTHS = [
   "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
 ];
 
-// Date-of-birth picker as three clean dropdowns (Gün / Ay / Yıl).
-// Keeps the three parts in local state so partial selections stick; emits an
-// ISO string "YYYY-MM-DD" to the parent once all three are chosen (else "").
-function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// Date picker as three clean dropdowns (Gün / Ay / Yıl). Keeps the three parts
+// in local state so partial selections stick; emits an ISO string "YYYY-MM-DD"
+// to the parent once all three are chosen (else ""). `mode` sets the year range:
+// "past" for birth dates, "future" for upcoming travel dates.
+function DropdownDateField({
+  value,
+  onChange,
+  mode,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  mode: "past" | "future";
+}) {
   const init = value ? value.split("-") : [];
   const [y, setY] = useState(init[0] ?? "");
   const [m, setM] = useState(init[1] ? String(Number(init[1])) : "");
@@ -57,7 +66,11 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
 
   const thisYear = new Date().getFullYear();
   const years: number[] = [];
-  for (let yr = thisYear - 16; yr >= thisYear - 100; yr--) years.push(yr);
+  if (mode === "past") {
+    for (let yr = thisYear - 16; yr >= thisYear - 100; yr--) years.push(yr);
+  } else {
+    for (let yr = thisYear; yr <= thisYear + 3; yr++) years.push(yr);
+  }
 
   const daysInMonth = y && m ? new Date(Number(y), Number(m), 0).getDate() : 31;
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -374,7 +387,7 @@ function StepPersonal({ w, set, errors }: StepProps) {
             <input className="mv-input" style={inputStyle} value={w.email} onChange={(e) => set("email", e.target.value)} placeholder="siz@eposta.com" />
           </Field>
           <Field label="Doğum tarihi" error={errors.dob}>
-            <DateOfBirthField value={w.dob} onChange={(v) => set("dob", v)} />
+            <DropdownDateField value={w.dob} onChange={(v) => set("dob", v)} mode="past" />
           </Field>
         </div>
         <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -414,7 +427,7 @@ function StepTravel({ w, set, errors }: StepProps) {
         </div>
         <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <Field label="Planlanan seyahat tarihi" error={errors.travelDate}>
-            <input className="mv-input" type="date" style={inputStyle} value={w.travelDate} onChange={(e) => set("travelDate", e.target.value)} />
+            <DropdownDateField value={w.travelDate} onChange={(v) => set("travelDate", v)} mode="future" />
           </Field>
           <Field label="Kalış süresi (gün)" error={errors.duration}>
             <input className="mv-input" style={inputStyle} value={w.duration} onChange={(e) => set("duration", e.target.value)} placeholder="örn. 21" inputMode="numeric" />
