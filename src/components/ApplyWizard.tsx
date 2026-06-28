@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Icon } from "./Icon";
 import { countries, destinationOpts, purposes, SERVICE_FEE, SERVICE_FEE_AMOUNT, SERVICE_PLAN_NAME } from "@/lib/data";
 import { trCountry, purposeTR } from "@/lib/tr";
+import { useToast } from "./Toast";
 
 type Wizard = {
   fullName: string; email: string; dob: string; nationality: string; passport: string;
@@ -102,6 +103,7 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
 
 export function ApplyWizard() {
   const router = useRouter();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Errors>({});
   const [uploads, setUploads] = useState<Upload[]>([]);
@@ -211,8 +213,10 @@ export function ApplyWizard() {
       setStep(6);
       window.scrollTo(0, 0);
       router.refresh();
+      toast(`Başvurunuz alındı ✓ Referans: ${data.ref}`, "success");
     } catch {
       setErrors({ submit: "Başvurunuz gönderilirken bir hata oluştu. Lütfen tekrar deneyin." });
+      toast("Başvurunuz gönderilemedi. Lütfen tekrar deneyin.", "error");
     } finally {
       setSubmitting(false);
     }

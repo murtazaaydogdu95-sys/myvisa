@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "./Icon";
+import { useToast } from "./Toast";
 
 const inputStyle = {
   width: "100%",
@@ -15,6 +16,7 @@ const inputStyle = {
 const labelStyle = { display: "block", fontSize: 12.5, fontWeight: 600, color: "#46566e", marginBottom: 6 } as const;
 
 export function ContactForm() {
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -27,6 +29,7 @@ export function ContactForm() {
     setError("");
     if (!name.trim() || !/^\S+@\S+\.\S+$/.test(email) || !message.trim()) {
       setError("Lütfen adınızı, geçerli bir e-posta ve bir mesaj girin.");
+      toast("Lütfen adınızı, geçerli bir e-posta ve bir mesaj girin.", "error");
       return;
     }
     setSending(true);
@@ -38,8 +41,10 @@ export function ContactForm() {
       });
       if (!res.ok) throw new Error();
       setSent(true);
+      toast("Mesajınız gönderildi ✓ En kısa sürede dönüş yapacağız.", "success");
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.");
+      toast("Mesajınız gönderilemedi. Lütfen tekrar deneyin.", "error");
     } finally {
       setSending(false);
     }

@@ -104,6 +104,20 @@ select {
   animation: mvPop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+@keyframes mvToastIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.mv-toast {
+  animation: mvToastIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 /* ===== hover / focus states (the design's style-hover / style-focus) ===== */
 .mv-navlink {
   transition: color 0.15s ease;

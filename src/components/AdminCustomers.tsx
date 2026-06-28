@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { Icon } from "./Icon";
 import { flagUrl, statusBadge } from "@/lib/data";
 import { trCountry, statusTR, planTR } from "@/lib/tr";
+import { useToast } from "./Toast";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export type Customer = {
   id: string;
@@ -168,9 +170,23 @@ function CustomerDialog({
   onClose: () => void;
   refund: (id: string) => Promise<void>;
 }) {
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const badge = statusBadge[c.status] ?? statusBadge.Pending;
   const isPaid = c.status === "Paid";
+
+  const doRefund = () =>
+    startTransition(async () => {
+      try {
+        await refund(c.id);
+        toast(`${c.name} için ödeme iade edildi.`, "success");
+        setConfirmOpen(false);
+        onClose();
+      } catch {
+        toast("İade işlemi başarısız oldu. Lütfen tekrar deneyin.", "error");
+      }
+    });
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(7,21,41,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -235,7 +251,7 @@ function CustomerDialog({
               Kapat
             </button>
             <button
-              onClick={() => startTransition(async () => { await refund(c.id); onClose(); })}
+              onClick={() => setConfirmOpen(true)}
               disabled={pending || !isPaid}
               className="mv-btn-ghost"
               style={{ flex: "none", background: "#f1f6fb", color: isPaid ? "#0A1F3C" : "#94a3b8", border: "1px solid #e2eaf2", fontWeight: 700, fontSize: 14.5, padding: "13px 20px", borderRadius: 11, cursor: pending || !isPaid ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
@@ -246,6 +262,19 @@ function CustomerDialog({
           </div>
         </div>
       </div>
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Ödemeyi iade et"
+          message={`${c.name} adlı müşteriye ait ${c.amount} tutarındaki ödemeyi iade etmek istediğinize emin misiniz? Bu işlem durumu "İade edildi" olarak değiştirir.`}
+          confirmLabel="Evet, iade et"
+          cancelLabel="Vazgeç"
+          danger
+          pending={pending}
+          onConfirm={doRefund}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }

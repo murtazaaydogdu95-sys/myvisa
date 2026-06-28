@@ -3,14 +3,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AdminShell } from "@/components/AdminShell";
 import { Icon } from "@/components/Icon";
-import { statuses, statusBadge } from "@/lib/data";
-import { trCountry, statusesTR, statusTR, docStateTR, planTR } from "@/lib/tr";
+import { statusBadge } from "@/lib/data";
+import { trCountry, statusTR, planTR } from "@/lib/tr";
 import { setPaymentStatus, setStage, setDocumentState, specialistReply } from "../../actions";
+import { StageControl, DocStateControl, PaymentControl, ReplyForm } from "@/components/AdminAppControls";
 
 export const dynamic = "force-dynamic";
-
-const DOC_STATES = ["Verified", "In review", "Action needed", "Missing"];
-const PAYMENTS = ["Paid", "Pending", "Refunded"];
 
 export default async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,18 +31,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* stage control */}
           <Card title="Süreç aşaması">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {statuses.map((s, i) => {
-                const on = i === a.statusIndex;
-                return (
-                  <form key={s} action={setStage.bind(null, a.id, i)}>
-                    <button type="submit" style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 13px", borderRadius: 9, border: on ? "none" : "1px solid #e2eaf2", background: on ? "#10b981" : "#fff", color: on ? "#fff" : "#46566e" }}>
-                      {i + 1}. {statusesTR[s] ?? s}
-                    </button>
-                  </form>
-                );
-              })}
-            </div>
+            <StageControl id={a.id} current={a.statusIndex} action={setStage} />
           </Card>
 
           {/* documents */}
@@ -64,18 +51,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                         <span style={{ fontSize: 12, color: "#cbd5e1" }}>dosya yok</span>
                       )}
                     </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {DOC_STATES.map((st) => {
-                        const on = d.state === st;
-                        return (
-                          <form key={st} action={setDocumentState.bind(null, a.id, d.id, st)}>
-                            <button type="submit" style={{ cursor: "pointer", fontSize: 11.5, fontWeight: 700, padding: "5px 10px", borderRadius: 8, border: on ? "none" : "1px solid #e2eaf2", background: on ? "#0A1F3C" : "#fff", color: on ? "#fff" : "#64748b" }}>
-                              {docStateTR[st] ?? st}
-                            </button>
-                          </form>
-                        );
-                      })}
-                    </div>
+                    <DocStateControl id={a.id} documentId={d.id} current={d.state} action={setDocumentState} />
                   </div>
                 ))}
               </div>
@@ -96,13 +72,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
               ))}
               {a.messages.length === 0 && <div style={{ fontSize: 14, color: "#94a3b8" }}>Henüz mesaj yok.</div>}
             </div>
-            <form action={specialistReply.bind(null, a.id)} style={{ display: "grid", gap: 10 }}>
-              <input name="who" placeholder="Uzman adı (örn. Amelia)" className="mv-input" style={inputStyle} />
-              <textarea name="text" required placeholder="Müşteriye bir yanıt yazın…" className="mv-input" style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} />
-              <button type="submit" className="mv-btn-emerald" style={{ justifySelf: "start", background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, padding: "11px 20px", borderRadius: 11, cursor: "pointer" }}>
-                Yanıt gönder
-              </button>
-            </form>
+            <ReplyForm id={a.id} action={specialistReply} />
           </Card>
         </div>
 
@@ -116,18 +86,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
               </span>
             </div>
             <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 10 }}>{planTR[a.plan] ?? a.plan} · {a.paymentMethod ?? "—"}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {PAYMENTS.map((st) => {
-                const on = a.status === st;
-                return (
-                  <form key={st} action={setPaymentStatus.bind(null, a.id, st)}>
-                    <button type="submit" style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, padding: "7px 12px", borderRadius: 9, border: on ? "none" : "1px solid #e2eaf2", background: on ? "#0A1F3C" : "#fff", color: on ? "#fff" : "#64748b" }}>
-                      {statusTR[st] ?? st}
-                    </button>
-                  </form>
-                );
-              })}
-            </div>
+            <PaymentControl id={a.id} current={a.status} action={setPaymentStatus} />
           </Card>
 
           <Card title="Başvuru bilgileri">
@@ -149,8 +108,6 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
     </AdminShell>
   );
 }
-
-const inputStyle = { width: "100%", padding: "11px 14px", border: "1px solid #dbe3ec", borderRadius: 10, fontSize: 14, color: "#0c1a30", background: "#fff" } as const;
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
