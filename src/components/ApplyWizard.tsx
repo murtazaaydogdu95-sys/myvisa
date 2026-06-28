@@ -40,6 +40,66 @@ const selectStyle = {
 
 const labelStyle = { display: "block", fontSize: 12.5, fontWeight: 600, color: "#46566e", marginBottom: 6 } as const;
 
+const TR_MONTHS = [
+  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+];
+
+// Date-of-birth picker as three clean dropdowns (Gün / Ay / Yıl).
+// Emits an ISO string "YYYY-MM-DD" once all three parts are chosen, else "".
+function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parts = value ? value.split("-") : [];
+  const y = parts[0] ?? "";
+  const m = parts[1] ? String(Number(parts[1])) : "";
+  const d = parts[2] ? String(Number(parts[2])) : "";
+
+  const thisYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let yr = thisYear - 16; yr >= thisYear - 100; yr--) years.push(yr);
+
+  const daysInMonth = y && m ? new Date(Number(y), Number(m), 0).getDate() : 31;
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const emit = (nd: string, nm: string, ny: string) => {
+    onChange(nd && nm && ny ? `${ny}-${nm.padStart(2, "0")}-${nd.padStart(2, "0")}` : "");
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 10 }}>
+      <select
+        aria-label="Gün"
+        className="mv-input"
+        style={{ ...selectStyle, flex: "0 0 30%" }}
+        value={d}
+        onChange={(e) => emit(e.target.value, m, y)}
+      >
+        <option value="">Gün</option>
+        {days.map((n) => <option key={n} value={n}>{n}</option>)}
+      </select>
+      <select
+        aria-label="Ay"
+        className="mv-input"
+        style={{ ...selectStyle, flex: "1 1 auto" }}
+        value={m}
+        onChange={(e) => emit(d, e.target.value, y)}
+      >
+        <option value="">Ay</option>
+        {TR_MONTHS.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}
+      </select>
+      <select
+        aria-label="Yıl"
+        className="mv-input"
+        style={{ ...selectStyle, flex: "0 0 30%" }}
+        value={y}
+        onChange={(e) => emit(d, m, e.target.value)}
+      >
+        <option value="">Yıl</option>
+        {years.map((n) => <option key={n} value={n}>{n}</option>)}
+      </select>
+    </div>
+  );
+}
+
 export function ApplyWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -306,7 +366,7 @@ function StepPersonal({ w, set, errors }: StepProps) {
             <input className="mv-input" style={inputStyle} value={w.email} onChange={(e) => set("email", e.target.value)} placeholder="siz@eposta.com" />
           </Field>
           <Field label="Doğum tarihi" error={errors.dob}>
-            <input className="mv-input" type="date" style={inputStyle} value={w.dob} onChange={(e) => set("dob", e.target.value)} />
+            <DateOfBirthField value={w.dob} onChange={(v) => set("dob", v)} />
           </Field>
         </div>
         <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -397,10 +457,15 @@ function StepDocuments({
 
 function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
   const fmt = (v: string, fb = "—") => (v && v.trim() ? v : fb);
+  const fmtDate = (v: string, fb = "—") => {
+    const p = v ? v.split("-") : [];
+    if (p.length !== 3) return fb;
+    return `${Number(p[2])} ${TR_MONTHS[Number(p[1]) - 1] ?? p[1]} ${p[0]}`;
+  };
   const rows: [string, string][] = [
-    ["Ad soyad", fmt(w.fullName)], ["E-posta", fmt(w.email)], ["Doğum tarihi", fmt(w.dob)],
+    ["Ad soyad", fmt(w.fullName)], ["E-posta", fmt(w.email)], ["Doğum tarihi", fmtDate(w.dob)],
     ["Uyruk", w.nationality ? trCountry(w.nationality) : "—"], ["Pasaport no.", fmt(w.passport)], ["Destinasyon", w.destination ? trCountry(w.destination) : "—"],
-    ["Amaç", w.purpose ? (purposeTR[w.purpose] ?? w.purpose) : "—"], ["Seyahat tarihi", fmt(w.travelDate)], ["Kalış süresi", w.duration ? `${w.duration} gün` : "—"],
+    ["Amaç", w.purpose ? (purposeTR[w.purpose] ?? w.purpose) : "—"], ["Seyahat tarihi", fmtDate(w.travelDate)], ["Kalış süresi", w.duration ? `${w.duration} gün` : "—"],
   ];
   return (
     <>

@@ -3,8 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "./Icon";
-import { destinations } from "@/lib/data";
+import { destinations, destinationOpts } from "@/lib/data";
 import { trCountry, trTag, trTime } from "@/lib/tr";
+
+const codeByName: Record<string, string> = Object.fromEntries(
+  destinationOpts.map((c) => [c.name, c.code]),
+);
 
 export function Destinations() {
   const [q, setQ] = useState("");
@@ -95,15 +99,39 @@ export function Destinations() {
               />
               <span
                 style={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#fff",
-                  letterSpacing: "-.01em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
                   position: "relative",
-                  textShadow: "0 1px 8px rgba(0,0,0,.3)",
                 }}
               >
-                {trCountry(d.name)}
+                {codeByName[d.name] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`https://flagcdn.com/w80/${codeByName[d.name]}.png`}
+                    alt={`${trCountry(d.name)} bayrağı`}
+                    width={30}
+                    height={20}
+                    style={{
+                      width: 30,
+                      height: 20,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                      boxShadow: "0 1px 6px rgba(0,0,0,.35)",
+                    }}
+                  />
+                )}
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: "#fff",
+                    letterSpacing: "-.01em",
+                    textShadow: "0 1px 8px rgba(0,0,0,.3)",
+                  }}
+                >
+                  {trCountry(d.name)}
+                </span>
               </span>
             </div>
             <div style={{ padding: 18 }}>
