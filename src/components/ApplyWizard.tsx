@@ -47,12 +47,13 @@ const TR_MONTHS = [
 ];
 
 // Date-of-birth picker as three clean dropdowns (Gün / Ay / Yıl).
-// Emits an ISO string "YYYY-MM-DD" once all three parts are chosen, else "".
+// Keeps the three parts in local state so partial selections stick; emits an
+// ISO string "YYYY-MM-DD" to the parent once all three are chosen (else "").
 function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const parts = value ? value.split("-") : [];
-  const y = parts[0] ?? "";
-  const m = parts[1] ? String(Number(parts[1])) : "";
-  const d = parts[2] ? String(Number(parts[2])) : "";
+  const init = value ? value.split("-") : [];
+  const [y, setY] = useState(init[0] ?? "");
+  const [m, setM] = useState(init[1] ? String(Number(init[1])) : "");
+  const [d, setD] = useState(init[2] ? String(Number(init[2])) : "");
 
   const thisYear = new Date().getFullYear();
   const years: number[] = [];
@@ -72,7 +73,7 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
         className="mv-input"
         style={{ ...selectStyle, flex: "0 0 30%" }}
         value={d}
-        onChange={(e) => emit(e.target.value, m, y)}
+        onChange={(e) => { setD(e.target.value); emit(e.target.value, m, y); }}
       >
         <option value="">Gün</option>
         {days.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -82,7 +83,7 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
         className="mv-input"
         style={{ ...selectStyle, flex: "1 1 auto" }}
         value={m}
-        onChange={(e) => emit(d, e.target.value, y)}
+        onChange={(e) => { setM(e.target.value); emit(d, e.target.value, y); }}
       >
         <option value="">Ay</option>
         {TR_MONTHS.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}
@@ -92,7 +93,7 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
         className="mv-input"
         style={{ ...selectStyle, flex: "0 0 30%" }}
         value={y}
-        onChange={(e) => emit(d, m, e.target.value)}
+        onChange={(e) => { setY(e.target.value); emit(d, m, e.target.value); }}
       >
         <option value="">Yıl</option>
         {years.map((n) => <option key={n} value={n}>{n}</option>)}
