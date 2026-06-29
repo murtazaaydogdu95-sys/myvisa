@@ -18,14 +18,9 @@ type Wizard = {
   cardName: string; cardNumber: string; expiry: string; cvv: string;
 };
 
-type Upload = { name: string; size: string; mime?: string; dataBase64?: string };
-
-const humanSize = (bytes: number) =>
-  bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 type Errors = Partial<Record<string, string>>;
 
-const STEP_LABELS = ["Kişisel", "Seyahat", "Belgeler", "İnceleme", "Ödeme"];
-const SUGGESTED = ["Pasaport.pdf", "Fotoğraf.jpg", "Banka ekstresi.pdf", "Seyahat planı.pdf", "Konaklama.pdf"];
+const STEP_LABELS = ["Kişisel", "Seyahat", "İnceleme", "Ödeme"];
 
 const inputStyle = {
   width: "100%",
@@ -132,7 +127,6 @@ export function ApplyWizard({
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Errors>({});
-  const [uploads, setUploads] = useState<Upload[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [doneRef, setDoneRef] = useState<string | null>(null);
   const [w, setW] = useState<Wizard>({
@@ -178,10 +172,7 @@ export function ApplyWizard({
       if (!w.travelDate) e.travelDate = "Seyahat tarihinizi seçin";
       if (!w.duration.trim()) e.duration = "Kaç gün kalacağınızı girin";
     }
-    if (n === 3) {
-      if (uploads.length < 2) e.uploads = "Lütfen en azından pasaportunuzu ve bir fotoğraf ekleyin";
-    }
-    if (n === 5) {
+    if (n === 4) {
       if (!w.cardName.trim()) e.cardName = "Kart üzerindeki ad gereklidir";
       if (w.cardNumber.replace(/\s/g, "").length < 12) e.cardNumber = "Geçerli bir kart numarası girin";
       if (!w.expiry.trim()) e.expiry = "Gerekli";
@@ -196,7 +187,7 @@ export function ApplyWizard({
       setErrors(e);
       return;
     }
-    if (step === 5) {
+    if (step === 4) {
       await submit();
       return;
     }
@@ -218,24 +209,6 @@ export function ApplyWizard({
     }
   };
 
-  const addFiles = (files: FileList | null) => {
-    if (!files) return;
-    Array.from(files).forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((e) => ({ ...e, uploads: `${file.name} çok büyük (en fazla 5 MB).` }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = String(reader.result).split(",")[1] ?? "";
-        setUploads((u) => [...u, { name: file.name, size: humanSize(file.size), mime: file.type, dataBase64: base64 }]);
-        setErrors((e) => ({ ...e, uploads: undefined }));
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-  const removeUpload = (i: number) => setUploads((u) => u.filter((_, x) => x !== i));
-
   const submit = async () => {
     setSubmitting(true);
     try {
@@ -251,13 +224,12 @@ export function ApplyWizard({
           hasChildren: w.hasChildren === "Evet",
           persons: Number(w.persons) || 1,
           travelDate: w.travelDate, duration: w.duration, plan: SERVICE_PLAN_NAME,
-          documents: uploads.map((u) => ({ name: u.name, mime: u.mime, dataBase64: u.dataBase64 })),
         }),
       });
       if (!res.ok) throw new Error("submit failed");
       const data = (await res.json()) as { ref: string };
       setDoneRef(data.ref);
-      setStep(6);
+      setStep(5);
       window.scrollTo(0, 0);
       router.refresh();
       toast(`Başvurunuz alındı ✓ Referans: ${data.ref}`, "success");
@@ -269,9 +241,9 @@ export function ApplyWizard({
     }
   };
 
-  const cur = Math.min(step, 5);
+  const cur = Math.min(step, 4);
 
-  if (step === 6) return <DoneScreen reference={doneRef} />;
+  if (step === 5) return <DoneScreen reference={doneRef} />;
 
   return (
     <div className="mv-apply-wrap" style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 80px" }}>
@@ -288,19 +260,19 @@ export function ApplyWizard({
       <div className="mv-stepper-mini" style={{ margin: "28px 0 22px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 14.5, fontWeight: 700, color: "#0A1F3C" }}>
-            Adım {cur}/5 · {STEP_LABELS[cur - 1]}
+            Adım {cur}/4 · {STEP_LABELS[cur - 1]}
           </span>
-          <span style={{ fontSize: 13, color: "#94a3b8" }}>{Math.round(((cur - 1) / 4) * 100)}%</span>
+          <span style={{ fontSize: 13, color: "#94a3b8" }}>{Math.round(((cur - 1) / 3) * 100)}%</span>
         </div>
         <div style={{ height: 6, background: "#e2eaf2", borderRadius: 6, overflow: "hidden" }}>
-          <div style={{ height: 6, width: `${((cur - 1) / 4) * 100}%`, background: "#10b981", borderRadius: 6, transition: "width .3s ease" }} />
+          <div style={{ height: 6, width: `${((cur - 1) / 3) * 100}%`, background: "#10b981", borderRadius: 6, transition: "width .3s ease" }} />
         </div>
       </div>
 
       {/* Stepper */}
       <div className="mv-stepper-full" style={{ position: "relative", margin: "40px 0 28px", padding: "0 8px" }}>
         <div style={{ position: "absolute", top: 17, left: 32, right: 32, height: 3, background: "#e2eaf2", borderRadius: 3 }} />
-        <div style={{ position: "absolute", top: 17, left: 32, width: `calc((100% - 64px) * ${(cur - 1) / 4})`, height: 3, background: "#10b981", borderRadius: 3, transition: "width .3s ease" }} />
+        <div style={{ position: "absolute", top: 17, left: 32, width: `calc((100% - 64px) * ${(cur - 1) / 3})`, height: 3, background: "#10b981", borderRadius: 3, transition: "width .3s ease" }} />
         <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
           {STEP_LABELS.map((label, i) => {
             const n = i + 1;
@@ -340,11 +312,8 @@ export function ApplyWizard({
       <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 20, padding: 32, boxShadow: "0 1px 3px rgba(10,31,60,.05), 0 14px 40px rgba(10,31,60,.06)" }}>
         {step === 1 && <StepPersonal w={w} set={set} errors={errors} />}
         {step === 2 && <StepTravel w={w} set={set} errors={errors} />}
-        {step === 3 && (
-          <StepDocuments uploads={uploads} addFiles={addFiles} removeUpload={removeUpload} error={errors.uploads} />
-        )}
-        {step === 4 && <StepReview w={w} uploads={uploads} />}
-        {step === 5 && <StepPayment w={w} set={set} errors={errors} />}
+        {step === 3 && <StepReview w={w} />}
+        {step === 4 && <StepPayment w={w} set={set} errors={errors} />}
 
         {errors.submit && (
           <div style={{ marginTop: 18, background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: 13.5, padding: "12px 14px", borderRadius: 10 }}>
@@ -369,8 +338,8 @@ export function ApplyWizard({
             className="mv-btn-emerald"
             style={{ flex: 1, background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 12, cursor: submitting ? "wait" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: submitting ? 0.75 : 1, boxShadow: "0 8px 20px rgba(16,185,129,.3)" }}
           >
-            {step === 5 ? (submitting ? "İşleniyor…" : `${priceForPersons(Number(w.persons)).totalLabel} öde ve gönder`) : "Devam et"}
-            {step < 5 && <Icon name="arrowRight" size={17} stroke="#fff" width={2.4} />}
+            {step === 4 ? (submitting ? "İşleniyor…" : `${priceForPersons(Number(w.persons)).totalLabel} öde ve gönder`) : "Devam et"}
+            {step < 4 && <Icon name="arrowRight" size={17} stroke="#fff" width={2.4} />}
           </button>
         </div>
       </div>
@@ -583,45 +552,7 @@ function PersonsHint({ persons }: { persons: string }) {
   );
 }
 
-function StepDocuments({
-  uploads, addFiles, removeUpload, error,
-}: { uploads: Upload[]; addFiles: (f: FileList | null) => void; removeUpload: (i: number) => void; error?: string }) {
-  return (
-    <>
-      <StepHeader title="Belgelerinizi yükleyin" sub={`Önerilen belgeler: ${SUGGESTED.join(", ")}. Dosya başına en fazla 5 MB.`} />
-      {uploads.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
-          {uploads.map((u, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "1px solid #e2eaf2", borderRadius: 12, background: "#f8fafc" }}>
-              <span style={{ width: 36, height: 36, borderRadius: 9, background: "#ecfdf5", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
-                <Icon name="file" size={18} stroke="#10b981" width={2} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#0A1F3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.name}</div>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>{u.size}</div>
-              </div>
-              <button onClick={() => removeUpload(i)} aria-label="Kaldır" style={{ width: 30, height: 30, borderRadius: 8, background: "#fff", border: "1px solid #e2eaf2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
-                <Icon name="x" size={15} stroke="#94a3b8" width={2.4} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <label style={{ display: "block", border: "2px dashed #dbe3ec", borderRadius: 14, padding: 26, textAlign: "center", cursor: "pointer" }}>
-        <input type="file" multiple accept="image/*,application/pdf" style={{ display: "none" }} onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-        <span style={{ width: 44, height: 44, borderRadius: 12, background: "#ecfdf5", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="upload" size={20} stroke="#10b981" width={2} />
-        </span>
-        <p style={{ fontSize: 14.5, color: "#0A1F3C", fontWeight: 600, margin: "12px 0 4px" }}>Dosya seçmek için tıklayın</p>
-        <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>PDF veya görsel · en fazla 5 MB</p>
-      </label>
-      {error && <div style={{ fontSize: 12.5, color: "#dc2626", marginTop: 12 }}>{error}</div>}
-    </>
-  );
-}
-
-function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
+function StepReview({ w }: { w: Wizard }) {
   const fmt = (v: string, fb = "—") => (v && v.trim() ? v : fb);
   const fmtDate = (v: string, fb = "—") => {
     const p = v ? v.split("-") : [];
@@ -648,14 +579,6 @@ function StepReview({ w, uploads }: { w: Wizard; uploads: Upload[] }) {
             <div style={{ fontSize: 14.5, fontWeight: 600, color: "#0A1F3C" }}>{v}</div>
           </div>
         ))}
-      </div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8 }}>Belgeler ({uploads.length})</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {uploads.map((u, i) => (
-            <span key={i} style={{ fontSize: 13, color: "#46566e", background: "#f1f6fb", border: "1px solid #e2eaf2", padding: "6px 11px", borderRadius: 8 }}>{u.name}</span>
-          ))}
-        </div>
       </div>
       <FeeSummary persons={w.persons} />
     </>
