@@ -272,7 +272,11 @@ export function VisaChecker() {
             <ResultCell label="Destinasyon" value={trCountry(result.dest)} />
           </div>
           <Link
-            href="/apply"
+            href={`/apply?${new URLSearchParams({
+              ...(destination ? { destination } : {}),
+              ...(visaCenter ? { visaCenter } : {}),
+              ...(visaType ? { visaType } : {}),
+            }).toString()}`}
             className="mv-btn-emerald"
             style={{
               display: "block",

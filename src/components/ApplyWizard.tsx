@@ -12,7 +12,7 @@ type Wizard = {
   fullName: string; email: string; phone: string; dob: string; gender: string;
   nationality: string; passport: string; passportExpiry: string; employment: string;
   addressLine1: string; addressLine2: string; city: string; state: string;
-  destination: string; visaCenter: string; purpose: string; sponsor: string;
+  destination: string; visaCenter: string; visaType: string; purpose: string; sponsor: string;
   accommodation: string; hasChildren: string; persons: string; travelDate: string; duration: string;
   cardName: string; cardNumber: string; expiry: string; cvv: string;
 };
@@ -118,7 +118,15 @@ function DropdownDateField({
   );
 }
 
-export function ApplyWizard() {
+export function ApplyWizard({
+  initialDestination = "",
+  initialVisaCenter = "",
+  initialVisaType = "",
+}: {
+  initialDestination?: string;
+  initialVisaCenter?: string;
+  initialVisaType?: string;
+} = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -130,7 +138,8 @@ export function ApplyWizard() {
     fullName: "", email: "", phone: "", dob: "", gender: "",
     nationality: "", passport: "", passportExpiry: "", employment: "",
     addressLine1: "", addressLine2: "", city: "", state: "",
-    destination: "", visaCenter: "", purpose: "", sponsor: "",
+    destination: initialDestination, visaCenter: initialVisaCenter, visaType: initialVisaType,
+    purpose: "", sponsor: "",
     accommodation: "", hasChildren: "", persons: "1", travelDate: "", duration: "",
     cardName: "", cardNumber: "", expiry: "", cvv: "",
   });
@@ -237,7 +246,7 @@ export function ApplyWizard() {
           nationality: w.nationality, passport: w.passport, passportExpiry: w.passportExpiry,
           employment: w.employment, addressLine1: w.addressLine1, addressLine2: w.addressLine2,
           city: w.city, state: w.state, destination: w.destination, visaCenter: w.visaCenter,
-          purpose: w.purpose, sponsor: w.sponsor, accommodation: w.accommodation,
+          visaType: w.visaType, purpose: w.purpose, sponsor: w.sponsor, accommodation: w.accommodation,
           hasChildren: w.hasChildren === "Evet",
           persons: Number(w.persons) || 1,
           travelDate: w.travelDate, duration: w.duration, plan: SERVICE_PLAN_NAME,
