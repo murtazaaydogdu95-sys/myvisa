@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Icon } from "./Icon";
 import { MobileNav } from "./MobileNav";
+import { CustomerLogoutButton } from "./CustomerLogoutButton";
+import { readCustomer } from "@/lib/auth-token";
 
 const links = [
   { href: "/#how", label: "Nasıl çalışır" },
@@ -10,7 +13,22 @@ const links = [
   { href: "/#faq", label: "SSS" },
 ];
 
-export function Navbar() {
+const loginLinkStyle = {
+  fontSize: 14.5,
+  fontWeight: 600,
+  color: "#0A1F3C",
+  textDecoration: "none",
+  padding: "9px 6px",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+} as const;
+
+export async function Navbar() {
+  const email = await readCustomer((await cookies()).get("mv_customer")?.value);
+  const authed = !!email;
+
   return (
     <header
       style={{
@@ -71,19 +89,18 @@ export function Navbar() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto" }}>
-          <Link
-            href="/login"
-            className="mv-nav-login"
-            style={{
-              fontSize: 14.5,
-              fontWeight: 600,
-              color: "#0A1F3C",
-              textDecoration: "none",
-              padding: "9px 6px",
-            }}
-          >
-            Giriş yap
-          </Link>
+          {authed ? (
+            <>
+              <Link href="/dashboard" className="mv-nav-login" style={loginLinkStyle}>
+                Panelim
+              </Link>
+              <CustomerLogoutButton className="mv-nav-login" style={loginLinkStyle} />
+            </>
+          ) : (
+            <Link href="/login" className="mv-nav-login" style={loginLinkStyle}>
+              Giriş yap
+            </Link>
+          )}
           <Link
             href="/apply"
             className="mv-btn-emerald mv-nav-cta"
@@ -100,7 +117,7 @@ export function Navbar() {
           >
             Başvuru Başlat
           </Link>
-          <MobileNav />
+          <MobileNav authed={authed} />
         </div>
       </nav>
     </header>

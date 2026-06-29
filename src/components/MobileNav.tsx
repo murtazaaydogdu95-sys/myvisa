@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "./Icon";
+import { CustomerLogoutButton } from "./CustomerLogoutButton";
 
 const links = [
   { href: "/#how", label: "Nasıl çalışır" },
@@ -12,7 +13,7 @@ const links = [
   { href: "/#faq", label: "SSS" },
 ];
 
-export function MobileNav() {
+export function MobileNav({ authed = false }: { authed?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mv-hamburger" style={{ position: "relative" }}>
@@ -50,9 +51,21 @@ export function MobileNav() {
               </a>
             ))}
             <div style={{ height: 1, background: "#eef2f7", margin: "6px 4px" }} />
-            <Link href="/login" onClick={() => setOpen(false)} style={{ display: "block", padding: "11px 12px", borderRadius: 9, fontSize: 14.5, fontWeight: 600, color: "#0A1F3C", textDecoration: "none" }}>
-              Giriş yap
-            </Link>
+            {authed ? (
+              <>
+                <Link href="/dashboard" onClick={() => setOpen(false)} style={{ display: "block", padding: "11px 12px", borderRadius: 9, fontSize: 14.5, fontWeight: 600, color: "#0A1F3C", textDecoration: "none" }}>
+                  Panelim
+                </Link>
+                <CustomerLogoutButton
+                  onAction={() => setOpen(false)}
+                  style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 12px", borderRadius: 9, fontSize: 14.5, fontWeight: 600, color: "#0A1F3C", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                />
+              </>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)} style={{ display: "block", padding: "11px 12px", borderRadius: 9, fontSize: 14.5, fontWeight: 600, color: "#0A1F3C", textDecoration: "none" }}>
+                Giriş yap
+              </Link>
+            )}
             <Link
               href="/apply"
               onClick={() => setOpen(false)}
