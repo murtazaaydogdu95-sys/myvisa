@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
 import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons, genders, employmentStatuses, sponsors, accommodations, visaCenters } from "@/lib/data";
+import { turkeyProvinces, turkeyProvinceNames } from "@/lib/turkeyCities";
 import { trCountry, purposeTR } from "@/lib/tr";
 import { useToast } from "./Toast";
 
@@ -463,11 +464,28 @@ function StepPersonal({ w, set, errors }: StepProps) {
           </Field>
         </div>
         <div className="mv-fieldgrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <Field label="Şehir" error={errors.city}>
-            <input className="mv-input" style={inputStyle} value={w.city} onChange={(e) => set("city", e.target.value)} placeholder="örn. İstanbul" />
+          <Field label="Şehir (il)" error={errors.city}>
+            <select
+              className="mv-input"
+              style={selectStyle}
+              value={w.city}
+              onChange={(e) => { set("city", e.target.value); set("state", ""); }}
+            >
+              <option value="">İl seçin</option>
+              {turkeyProvinceNames.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
           </Field>
-          <Field label="İl / Eyalet (isteğe bağlı)">
-            <input className="mv-input" style={inputStyle} value={w.state} onChange={(e) => set("state", e.target.value)} placeholder="örn. Marmara" />
+          <Field label="İlçe (isteğe bağlı)">
+            <select
+              className="mv-input"
+              style={{ ...selectStyle, cursor: w.city ? "pointer" : "not-allowed", background: w.city ? selectStyle.background : "#f8fafc" }}
+              value={w.state}
+              onChange={(e) => set("state", e.target.value)}
+              disabled={!w.city}
+            >
+              <option value="">{w.city ? "İlçe seçin" : "Önce il seçin"}</option>
+              {(turkeyProvinces[w.city] ?? []).map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
           </Field>
         </div>
       </div>
