@@ -100,14 +100,14 @@ jobs:
       - name: Sync runtime secrets to cluster
         env:
           DB_PASSWORD: ${{ secrets.MYVISA_DB_PASSWORD }}
-          ADMIN_USER: ${{ secrets.MYVISA_ADMIN_USER }}
-          ADMIN_PASSWORD: ${{ secrets.MYVISA_ADMIN_PASSWORD }}
+          ADMIN_USER: ${{ secrets.ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           AUTH_SECRET: ${{ secrets.MYVISA_AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.MYVISA_RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.MYVISA_EMAIL_FROM }}
           ADMIN_EMAIL: ${{ secrets.MYVISA_ADMIN_EMAIL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.MYVISA_TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.MYVISA_TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CRON_SECRET: ${{ secrets.MYVISA_CRON_SECRET }}
         run: |
           umask 077
