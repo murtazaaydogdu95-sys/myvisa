@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminCustomers, type Customer } from "@/components/AdminCustomers";
-import { initials, sumAmounts } from "@/lib/format";
+import { initials } from "@/lib/format";
+import { formatEuroCents } from "@/lib/data";
 import { refundApplication } from "./actions";
 import { requireAdminPage } from "@/lib/admin-auth";
 
@@ -40,8 +41,13 @@ export default async function AdminPage() {
   }));
 
   const customerCount = customers.length;
-  const paidCount = customers.filter((c) => c.status === "Paid").length;
-  const revenue = sumAmounts(customers.filter((c) => c.status === "Paid").map((c) => c.amount));
+  const paidCount = customers.filter((c) => c.status === "Paid" || c.status === "DepositPaid").length;
+  // Revenue = sum of payments actually collected (deposits + balances).
+  const paidAgg = await prisma.payment.aggregate({
+    where: { status: "paid", application: { isDemo: false } },
+    _sum: { amountCents: true },
+  });
+  const revenue = formatEuroCents(paidAgg._sum.amountCents ?? 0);
 
   return (
     <AdminShell active="customers" title="Müşteriler" subtitle="Vize başvurusu için ödeme yapan herkes.">

@@ -2,17 +2,51 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { statuses } from "@/lib/data";
+import { statuses, balanceCents, formatEuroCents } from "@/lib/data";
 import { sendEmail, specialistReplyEmail } from "@/lib/email";
 import { assertAdminAction } from "@/lib/admin-auth";
 
-const PAYMENT_STATUSES = ["Paid", "Pending", "Refunded"];
+const PAYMENT_STATUSES = ["Paid", "DepositPaid", "Pending", "Refunded"];
 const DOC_STATES = ["Verified", "In review", "Action needed", "Missing"];
 
 export async function refundApplication(id: string) {
   await assertAdminAction();
-  await prisma.application.update({ where: { id }, data: { status: "Refunded" } });
+  await prisma.application.update({
+    where: { id },
+    data: {
+      status: "Refunded",
+      payments: { updateMany: { where: { status: { not: "refunded" } }, data: { status: "refunded" } } },
+    },
+  });
   revalidatePath("/admin");
+  revalidatePath(`/admin/applications/${id}`);
+  revalidatePath("/admin/payments");
+  revalidatePath("/dashboard");
+}
+
+// Admin creates the remaining-balance payment once the appointment is booked.
+// The customer then pays it from their dashboard.
+export async function createBalancePayment(id: string) {
+  await assertAdminAction();
+  const app = await prisma.application.findUnique({ where: { id }, include: { payments: true } });
+  if (!app) return;
+  if (app.payments.some((p) => p.kind === "balance")) return; // already exists — no double-charge
+
+  const cents = balanceCents(app.totalCents);
+  await prisma.payment.create({
+    data: { applicationId: id, kind: "balance", label: "Bakiye (%50)", amountCents: cents, status: "pending" },
+  });
+  await prisma.message.create({
+    data: {
+      applicationId: id,
+      who: "Sistem",
+      when: "az önce",
+      text: `Randevunuz için bakiye ödemesi oluşturuldu: ${formatEuroCents(cents)}. Panelinizden ödeyebilirsiniz.`,
+    },
+  });
+  revalidatePath(`/admin/applications/${id}`);
+  revalidatePath("/admin/payments");
+  revalidatePath("/dashboard");
 }
 
 export async function setPaymentStatus(id: string, status: string) {

@@ -206,6 +206,15 @@ export const PRICE_TIERS: PriceTier[] = [
 // Turkish-style euro formatting (e.g. 2010 -> "€2.010").
 export const formatEuro = (n: number) => `€${Math.round(n).toLocaleString("tr-TR")}`;
 
+// Euro formatting from integer cents, with 2 decimals (e.g. 18750 -> "€187,50").
+export const formatEuroCents = (cents: number) =>
+  `€${(cents / 100).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Split-payment model: a deposit (this %) at checkout, balance is the rest.
+export const DEPOSIT_PCT = 50;
+export const depositCents = (totalCents: number) => Math.round((totalCents * DEPOSIT_PCT) / 100);
+export const balanceCents = (totalCents: number) => totalCents - depositCents(totalCents);
+
 export function tierForPersons(persons: number): PriceTier {
   const p = Math.max(1, Math.floor(persons || 1));
   return PRICE_TIERS.find((t) => p >= t.min && p <= t.max) ?? PRICE_TIERS[PRICE_TIERS.length - 1];
@@ -232,6 +241,7 @@ export const statusBadge: Record<
   { bg: string; fg: string; dot: string }
 > = {
   Paid: { bg: "#ecfdf5", fg: "#047857", dot: "#10b981" },
+  DepositPaid: { bg: "#eff6ff", fg: "#1d4ed8", dot: "#3b82f6" },
   Refunded: { bg: "#fef2f2", fg: "#b91c1c", dot: "#ef4444" },
   Pending: { bg: "#fffbeb", fg: "#b45309", dot: "#f59e0b" },
 };

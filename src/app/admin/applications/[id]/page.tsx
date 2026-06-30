@@ -5,8 +5,8 @@ import { AdminShell } from "@/components/AdminShell";
 import { Icon } from "@/components/Icon";
 import { statusBadge } from "@/lib/data";
 import { trCountry, statusTR, planTR } from "@/lib/tr";
-import { setPaymentStatus, setStage, setDocumentState, specialistReply } from "../../actions";
-import { StageControl, DocStateControl, PaymentControl, ReplyForm } from "@/components/AdminAppControls";
+import { setPaymentStatus, setStage, setDocumentState, specialistReply, createBalancePayment } from "../../actions";
+import { StageControl, DocStateControl, PaymentControl, ReplyForm, PaymentsPanel } from "@/components/AdminAppControls";
 import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,11 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const { id } = await params;
   const a = await prisma.application.findUnique({
     where: { id },
-    include: { documents: { orderBy: { createdAt: "asc" } }, messages: { orderBy: { createdAt: "asc" } } },
+    include: {
+      documents: { orderBy: { createdAt: "asc" } },
+      messages: { orderBy: { createdAt: "asc" } },
+      payments: { orderBy: { createdAt: "asc" } },
+    },
   });
   if (!a) notFound();
 
@@ -87,10 +91,17 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: badge.dot }} />{statusTR[a.status] ?? a.status}
               </span>
             </div>
-            <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 10 }}>
+            <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 14 }}>
               {planTR[a.plan] ?? a.plan} · {a.paymentMethod ?? "—"}
               {a.perPerson ? ` · ${a.persons} kişi × ${a.perPerson}` : ""}
             </div>
+            <PaymentsPanel
+              id={a.id}
+              payments={a.payments.map((p) => ({ id: p.id, kind: p.kind, label: p.label, amountCents: p.amountCents, status: p.status }))}
+              createBalance={createBalancePayment}
+            />
+            <div style={{ height: 14 }} />
+            <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8 }}>Genel durum (manuel)</div>
             <PaymentControl id={a.id} current={a.status} action={setPaymentStatus} />
           </Card>
 

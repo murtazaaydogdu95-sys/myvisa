@@ -174,7 +174,8 @@ function CustomerDialog({
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const badge = statusBadge[c.status] ?? statusBadge.Pending;
-  const isPaid = c.status === "Paid";
+  // Refundable / "money collected" when at least the deposit is paid.
+  const isPaid = c.status === "Paid" || c.status === "DepositPaid";
 
   const doRefund = () =>
     startTransition(async () => {

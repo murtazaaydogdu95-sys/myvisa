@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   const rows = await prisma.application.findMany({
     where: { email: { equals: email, mode: "insensitive" } },
-    include: { documents: true, messages: true },
+    include: { documents: true, messages: true, payments: { orderBy: { createdAt: "asc" } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -33,6 +33,7 @@ export default async function DashboardPage() {
     statusIndex: a.statusIndex,
     documents: a.documents.map((d) => ({ id: d.id, name: d.name, state: d.state, size: d.size ?? null })),
     messages: a.messages.map((m) => ({ who: m.who, when: m.when, text: m.text, fromCustomer: m.fromCustomer })),
+    payments: a.payments.map((p) => ({ id: p.id, kind: p.kind, label: p.label, amountCents: p.amountCents, status: p.status })),
   }));
 
   return (

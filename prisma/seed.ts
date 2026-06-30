@@ -62,10 +62,31 @@ async function main() {
   await prisma.contactMessage.deleteMany();
 
   // Normalize the MyVisa service fee to the current single plan (€375), keeping
-  // each customer's real per-country government fee.
+  // each customer's real per-country government fee. Each non-refunded customer
+  // has a paid deposit; status reflects deposit vs full payment.
   for (const c of customers) {
+    const refunded = c.status === "Refunded";
+    const fullyPaid = c.status === "Paid";
     await prisma.application.create({
-      data: { ...c, amount: "€375.00", plan: "Full Service", statusIndex: 4, isDemo: false },
+      data: {
+        ...c,
+        amount: "€375",
+        totalCents: 37500,
+        plan: "Full Service",
+        statusIndex: 4,
+        isDemo: false,
+        status: refunded ? "Refunded" : fullyPaid ? "Paid" : "DepositPaid",
+        payments: refunded
+          ? undefined
+          : {
+              create: fullyPaid
+                ? [
+                    { kind: "deposit", label: "Kapora (%50)", amountCents: 18750, status: "paid", txn: c.txn, paidOn: c.paidOn },
+                    { kind: "balance", label: "Bakiye (%50)", amountCents: 18750, status: "paid", txn: "txn_demo_bal", paidOn: c.paidOn },
+                  ]
+                : [{ kind: "deposit", label: "Kapora (%50)", amountCents: 18750, status: "paid", txn: c.txn, paidOn: c.paidOn }],
+            },
+      },
     });
   }
 
@@ -80,13 +101,15 @@ async function main() {
         destinationFlag: a.destinationFlag,
         visaType: a.visaType,
         plan: "Full Service",
-        amount: "€375.00",
+        amount: "€375",
+        totalCents: 37500,
         paidOn: a.paidOn,
-        status: "Paid",
+        status: "DepositPaid",
         statusIndex: a.statusIndex,
         isDemo: true,
         documents: { create: a.docs },
         messages: { create: a.messages },
+        payments: { create: [{ kind: "deposit", label: "Kapora (%50)", amountCents: 18750, status: "paid", txn: "txn_demo_dep", paidOn: a.paidOn }] },
       },
     });
   }

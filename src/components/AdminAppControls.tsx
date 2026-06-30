@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { statuses } from "@/lib/data";
+import { statuses, statusBadge, formatEuroCents } from "@/lib/data";
 import { statusesTR, statusTR, docStateTR } from "@/lib/tr";
 import { useToast } from "./Toast";
 import { ConfirmDialog } from "./ConfirmDialog";
+
+export type PaymentRow = { id: string; kind: string; label: string; amountCents: number; status: string };
+
+const PAY_STATUS_TR: Record<string, string> = { paid: "Ödendi", pending: "Beklemede", refunded: "İade edildi" };
+const PAY_BADGE: Record<string, string> = { paid: "Paid", pending: "Pending", refunded: "Refunded" };
 
 const DOC_STATES = ["Verified", "In review", "Action needed", "Missing"];
 const PAYMENTS = ["Paid", "Pending", "Refunded"];
@@ -203,5 +208,61 @@ export function ReplyForm({
         {pending ? "Gönderiliyor…" : "Yanıt gönder"}
       </button>
     </form>
+  );
+}
+
+// Itemized payments + a button to create the balance payment once an
+// appointment is booked (only one balance payment can ever be created).
+export function PaymentsPanel({
+  id,
+  payments,
+  createBalance,
+}: {
+  id: string;
+  payments: PaymentRow[];
+  createBalance: (id: string) => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
+  const hasBalance = payments.some((p) => p.kind === "balance");
+
+  const create = () =>
+    start(async () => {
+      try {
+        await createBalance(id);
+        toast("Bakiye ödemesi oluşturuldu.", "success");
+      } catch {
+        toast("Bakiye ödemesi oluşturulamadı.", "error");
+      }
+    });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {payments.map((p) => {
+        const badge = statusBadge[PAY_BADGE[p.status]] ?? statusBadge.Pending;
+        return (
+          <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: "1px solid #eef2f7", borderRadius: 12, padding: "12px 14px" }}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0A1F3C" }}>{p.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#0A1F3C", marginTop: 2 }}>{formatEuroCents(p.amountCents)}</div>
+            </div>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: badge.bg, color: badge.fg, fontSize: 12, fontWeight: 700, padding: "5px 10px", borderRadius: 999 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: badge.dot }} />
+              {PAY_STATUS_TR[p.status] ?? p.status}
+            </span>
+          </div>
+        );
+      })}
+
+      {!hasBalance && (
+        <button
+          onClick={create}
+          disabled={pending}
+          style={{ marginTop: 4, background: "#0A1F3C", color: "#fff", border: "none", fontWeight: 700, fontSize: 13.5, padding: "11px 14px", borderRadius: 11, cursor: pending ? "not-allowed" : "pointer" }}
+        >
+          {pending ? "Oluşturuluyor…" : "Bakiye ödemesi oluştur (randevu sonrası)"}
+        </button>
+      )}
+    </div>
   );
 }

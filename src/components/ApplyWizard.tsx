@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
-import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons, genders, employmentStatuses, sponsors, accommodations, visaCenters } from "@/lib/data";
+import { countries, destinationOpts, purposes, SERVICE_PLAN_NAME, priceForPersons, depositCents, balanceCents, formatEuroCents, genders, employmentStatuses, sponsors, accommodations, visaCenters } from "@/lib/data";
+
+const depositLabelFor = (persons: string) => formatEuroCents(depositCents(priceForPersons(Number(persons) || 1).total * 100));
 import { turkeyProvinces, turkeyProvinceNames } from "@/lib/turkeyCities";
 import { trCountry, purposeTR } from "@/lib/tr";
 import { useToast } from "./Toast";
@@ -338,7 +340,7 @@ export function ApplyWizard({
             className="mv-btn-emerald"
             style={{ flex: 1, background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 12, cursor: submitting ? "wait" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: submitting ? 0.75 : 1, boxShadow: "0 8px 20px rgba(16,185,129,.3)" }}
           >
-            {step === 4 ? (submitting ? "İşleniyor…" : `${priceForPersons(Number(w.persons)).totalLabel} öde ve gönder`) : "Devam et"}
+            {step === 4 ? (submitting ? "İşleniyor…" : `${depositLabelFor(w.persons)} kapora öde ve gönder`) : "Devam et"}
             {step < 4 && <Icon name="arrowRight" size={17} stroke="#fff" width={2.4} />}
           </button>
         </div>
@@ -590,7 +592,7 @@ function StepPayment({
 }: { w: Wizard; set: (k: keyof Wizard, v: string) => void; errors: Errors }) {
   return (
     <>
-      <StepHeader title="Ödeme" sub="Tek seferlik MyVisa hizmet ücretini ödeyin. Resmi / konsolosluk harçları ayrıca ödenir." />
+      <StepHeader title="Ödeme" sub="Bugün hizmet bedelinin %50'sini kapora olarak ödersiniz; kalan bakiye randevunuz alındıktan sonra alınır. Resmi / konsolosluk harçları ayrıca ödenir." />
       <FeeSummary persons={w.persons} />
       <div style={{ display: "grid", gap: 16, marginTop: 22 }}>
         <Field label="Kart üzerindeki ad" error={errors.cardName}>
@@ -614,15 +616,26 @@ function StepPayment({
 
 function FeeSummary({ persons }: { persons: string }) {
   const p = priceForPersons(Number(persons) || 1);
+  const totalCents = p.total * 100;
+  const depLabel = formatEuroCents(depositCents(totalCents));
+  const balLabel = formatEuroCents(balanceCents(totalCents));
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: "16px 18px" }}>
-      <div>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#065f46" }}>MyVisa Tam Hizmet</div>
-        <div style={{ fontSize: 12.5, color: "#059669", marginTop: 2 }}>
-          {p.perPersonLabel}/kişi × {p.persons} kişi — her şey baştan sona halledilir.
+    <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: "16px 18px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+        <div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#065f46" }}>MyVisa Tam Hizmet</div>
+          <div style={{ fontSize: 12.5, color: "#059669", marginTop: 2 }}>
+            {p.perPersonLabel}/kişi × {p.persons} kişi · Toplam {p.totalLabel}
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11.5, color: "#059669", fontWeight: 600 }}>Bugün ödenecek kapora (%50)</div>
+          <span style={{ fontSize: 24, fontWeight: 800, color: "#065f46", letterSpacing: "-.02em" }}>{depLabel}</span>
         </div>
       </div>
-      <span style={{ fontSize: 24, fontWeight: 800, color: "#065f46", letterSpacing: "-.02em" }}>{p.totalLabel}</span>
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #a7f3d0", fontSize: 12.5, color: "#047857" }}>
+        Kalan bakiye <strong>{balLabel}</strong>, randevunuz alındıktan sonra panelinizden ödenir.
+      </div>
     </div>
   );
 }

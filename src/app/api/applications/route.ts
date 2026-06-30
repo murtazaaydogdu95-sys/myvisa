@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { countries, destinationOpts, SERVICE_PLAN_NAME, priceForPersons } from "@/lib/data";
+import { countries, destinationOpts, SERVICE_PLAN_NAME, priceForPersons, depositCents, formatEuroCents } from "@/lib/data";
 import { trCountry } from "@/lib/tr";
 import { makeRef, makeTxn, formatDay } from "@/lib/format";
 import { applicationSchema } from "@/lib/validation";
@@ -29,6 +29,8 @@ export async function POST(req: Request) {
 
   // Price is computed server-side from the group size — never trust the client.
   const pricing = priceForPersons(d.persons);
+  const totalCents = pricing.total * 100;
+  const depCents = depositCents(totalCents);
 
   const base = {
     title: `${trCountry(d.destination)} vizesi`,
@@ -60,12 +62,19 @@ export async function POST(req: Request) {
     persons: pricing.persons,
     perPerson: pricing.perPersonLabel,
     amount: pricing.totalLabel,
+    totalCents,
     paymentMethod: "Card payment",
     txn: makeTxn(),
     paidOn: formatDay(),
-    status: "Paid",
+    // Only the deposit is paid at checkout; balance is created by admin later.
+    status: "DepositPaid",
     statusIndex: 0,
     isDemo: false,
+    payments: {
+      create: [
+        { kind: "deposit", label: "Kapora (%50)", amountCents: depCents, status: "paid", txn: makeTxn(), paidOn: formatDay() },
+      ],
+    },
     documents: {
       create: d.documents.map((f) => {
         const bytes = f.dataBase64 ? Buffer.from(f.dataBase64, "base64") : null;
@@ -124,6 +133,7 @@ export async function POST(req: Request) {
       ref: application.ref,
       destination: trCountry(application.destination),
       amount: application.amount,
+      deposit: formatEuroCents(depCents),
       perPerson: application.perPerson ?? pricing.perPersonLabel,
       persons: application.persons,
       email: application.email,

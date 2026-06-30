@@ -65,6 +65,10 @@ export const customerVerifySchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/),
 });
 
+export const payBalanceSchema = z.object({
+  paymentId: z.string().min(1).max(60),
+});
+
 export const adminLoginSchema = z.object({
   user: z.string().max(120),
   password: z.string().max(200),

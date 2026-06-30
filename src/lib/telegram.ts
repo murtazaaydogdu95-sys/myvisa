@@ -45,17 +45,19 @@ export function newPurchaseMessage(p: {
   ref: string;
   destination: string;
   amount: string;
+  deposit: string;
   perPerson: string;
   persons: number;
   email: string;
 }): string {
   return [
-    "🎉 *Yeni başvuru & ödeme alındı*",
+    "🎉 *Yeni başvuru & kapora alındı*",
     "",
     `👤 *Müşteri:* ${esc(p.fullName)}`,
     `📧 *E-posta:* ${esc(p.email)}`,
     `🌍 *Destinasyon:* ${esc(p.destination)}`,
     `👥 *Kişi sayısı:* ${p.persons} (${esc(p.perPerson)}/kişi)`,
+    `💰 *Kapora (%50):* ${esc(p.deposit)}`,
     `💳 *Toplam:* ${esc(p.amount)}`,
     `🔖 *Referans:* ${esc(p.ref)}`,
   ].join("\n");

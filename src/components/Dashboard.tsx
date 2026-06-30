@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "./Icon";
-import { flagUrl, statuses } from "@/lib/data";
+import { flagUrl, statuses, formatEuroCents } from "@/lib/data";
 import { trCountry, statusesTR, docStateTR, statusTR, planTR } from "@/lib/tr";
+
+export type DashPayment = { id: string; kind: string; label: string; amountCents: number; status: string };
 
 export type DashApp = {
   id: string;
@@ -20,6 +22,7 @@ export type DashApp = {
   statusIndex: number;
   documents: { id: string; name: string; state: string; size: number | null }[];
   messages: { who: string; when: string; text: string; fromCustomer: boolean }[];
+  payments: DashPayment[];
 };
 
 const docColor: Record<string, { bg: string; fg: string }> = {
@@ -41,6 +44,21 @@ export function Dashboard({ apps, email }: { apps: DashApp[]; email?: string }) 
     await fetch("/api/customer/login", { method: "DELETE" }).catch(() => {});
     router.replace("/login");
     router.refresh();
+  };
+
+  const payBalance = async (paymentId: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/customer/pay-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const sendReply = async (applicationId: string) => {
@@ -239,14 +257,41 @@ export function Dashboard({ apps, email }: { apps: DashApp[]; email?: string }) 
 
           {/* payment */}
           <Card title="Ödeme">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: "16px 18px" }}>
-              <div>
-                <div style={{ fontSize: 12, color: "#047857", fontWeight: 600 }}>{planTR[active.plan] ?? active.plan} plan</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#065f46", marginTop: 2 }}>{active.amount}</div>
-              </div>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", color: "#047857", fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 999 }}>
-                <Icon name="check" size={15} stroke="#10b981" width={2.6} /> {statusTR[active.status] ?? active.status}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ fontSize: 13, color: "#64748b" }}>{planTR[active.plan] ?? active.plan} · Toplam {active.amount}</div>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#f1f6fb", color: "#0A1F3C", fontSize: 12.5, fontWeight: 700, padding: "6px 12px", borderRadius: 999 }}>
+                {statusTR[active.status] ?? active.status}
               </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {active.payments.map((p) => {
+                const paid = p.status === "paid";
+                const refunded = p.status === "refunded";
+                return (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: "1px solid #eef2f7", borderRadius: 12, padding: "13px 15px" }}>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0A1F3C" }}>{p.label}</div>
+                      <div style={{ fontSize: 17, fontWeight: 800, color: "#0A1F3C", marginTop: 2 }}>{formatEuroCents(p.amountCents)}</div>
+                    </div>
+                    {paid ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#047857", fontSize: 13, fontWeight: 700 }}>
+                        <Icon name="check" size={15} stroke="#10b981" width={2.6} /> Ödendi
+                      </span>
+                    ) : refunded ? (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#b91c1c" }}>İade edildi</span>
+                    ) : (
+                      <button
+                        onClick={() => payBalance(p.id)}
+                        disabled={busy}
+                        className="mv-btn-emerald"
+                        style={{ background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 13.5, padding: "10px 18px", borderRadius: 10, cursor: busy ? "wait" : "pointer" }}
+                      >
+                        {busy ? "İşleniyor…" : "Öde"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </div>

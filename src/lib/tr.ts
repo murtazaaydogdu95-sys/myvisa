@@ -59,7 +59,8 @@ export const purposeTR: Record<string, string> = {
 };
 
 export const statusTR: Record<string, string> = {
-  Paid: "Ödendi",
+  Paid: "Tamamı ödendi",
+  DepositPaid: "Kapora ödendi",
   Refunded: "İade edildi",
   Pending: "Beklemede",
 };
