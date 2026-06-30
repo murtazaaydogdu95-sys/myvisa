@@ -3,11 +3,13 @@ import { AdminShell } from "@/components/AdminShell";
 import { AdminCustomers, type Customer } from "@/components/AdminCustomers";
 import { initials, sumAmounts } from "@/lib/format";
 import { refundApplication } from "./actions";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = { title: "Müşteriler — Yönetim" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  await requireAdminPage();
   const rows = await prisma.application.findMany({
     where: { isDemo: false },
     orderBy: { createdAt: "desc" },

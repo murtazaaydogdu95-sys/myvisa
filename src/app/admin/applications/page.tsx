@@ -4,11 +4,13 @@ import { AdminShell } from "@/components/AdminShell";
 import { Icon } from "@/components/Icon";
 import { flagUrl, statuses, statusBadge } from "@/lib/data";
 import { trCountry, statusTR, statusesTR } from "@/lib/tr";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = { title: "Başvurular — Yönetim" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminApplicationsPage() {
+  await requireAdminPage();
   const apps = await prisma.application.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { documents: true } } },

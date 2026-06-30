@@ -4,16 +4,19 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { statuses } from "@/lib/data";
 import { sendEmail, specialistReplyEmail } from "@/lib/email";
+import { assertAdminAction } from "@/lib/admin-auth";
 
 const PAYMENT_STATUSES = ["Paid", "Pending", "Refunded"];
 const DOC_STATES = ["Verified", "In review", "Action needed", "Missing"];
 
 export async function refundApplication(id: string) {
+  await assertAdminAction();
   await prisma.application.update({ where: { id }, data: { status: "Refunded" } });
   revalidatePath("/admin");
 }
 
 export async function setPaymentStatus(id: string, status: string) {
+  await assertAdminAction();
   if (!PAYMENT_STATUSES.includes(status)) return;
   await prisma.application.update({ where: { id }, data: { status } });
   revalidatePath("/admin");
@@ -22,6 +25,7 @@ export async function setPaymentStatus(id: string, status: string) {
 }
 
 export async function setStage(id: string, statusIndex: number) {
+  await assertAdminAction();
   if (!Number.isInteger(statusIndex) || statusIndex < 0 || statusIndex >= statuses.length) return;
   await prisma.application.update({ where: { id }, data: { statusIndex } });
   await prisma.message.create({
@@ -37,6 +41,7 @@ export async function setStage(id: string, statusIndex: number) {
 }
 
 export async function setDocumentState(id: string, documentId: string, state: string) {
+  await assertAdminAction();
   if (!DOC_STATES.includes(state)) return;
   await prisma.document.update({ where: { id: documentId }, data: { state } });
   revalidatePath(`/admin/applications/${id}`);
@@ -44,6 +49,7 @@ export async function setDocumentState(id: string, documentId: string, state: st
 }
 
 export async function specialistReply(id: string, formData: FormData) {
+  await assertAdminAction();
   const text = String(formData.get("text") ?? "").trim();
   const who = String(formData.get("who") ?? "MyVisa uzmanı").trim() || "MyVisa uzmanı";
   if (!text) return;

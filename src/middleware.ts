@@ -13,13 +13,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   };
 
-  // ── Admin gate ──
+  // ── Admin gate ── (fails CLOSED: no password configured ⇒ never authed)
   if (pathname.startsWith("/admin")) {
     const user = process.env.ADMIN_USER || "admin";
     const pass = process.env.ADMIN_PASSWORD || "";
-    if (!pass) return NextResponse.next(); // gate disabled when no password configured
-
-    const authed = await verifyAdmin(req.cookies.get("mv_admin")?.value, user);
+    const authed = !!pass && (await verifyAdmin(req.cookies.get("mv_admin")?.value, user));
     if (pathname === "/admin/login") return authed ? redirectTo("/admin") : NextResponse.next();
     return authed ? NextResponse.next() : redirectTo("/admin/login");
   }

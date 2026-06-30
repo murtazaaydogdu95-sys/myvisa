@@ -19,7 +19,11 @@ export async function POST(req: Request) {
   const user = process.env.ADMIN_USER || "admin";
   const pass = process.env.ADMIN_PASSWORD || "";
 
-  if (pass && !(parsed.data.user === user && parsed.data.password === pass)) {
+  // Fail closed: with no admin password configured, login is disabled.
+  if (!pass) {
+    return NextResponse.json({ error: "Yönetim girişi yapılandırılmamış." }, { status: 503 });
+  }
+  if (!(parsed.data.user === user && parsed.data.password === pass)) {
     return NextResponse.json({ error: "Kullanıcı adı veya şifre hatalı." }, { status: 401 });
   }
 

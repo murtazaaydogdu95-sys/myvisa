@@ -3,11 +3,13 @@ import { AdminShell } from "@/components/AdminShell";
 import { sumAmounts } from "@/lib/format";
 import { statusTR } from "@/lib/tr";
 import { statusBadge } from "@/lib/data";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = { title: "Ödemeler — Yönetim" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPaymentsPage() {
+  await requireAdminPage();
   const rows = await prisma.application.findMany({
     where: { isDemo: false },
     orderBy: { createdAt: "desc" },

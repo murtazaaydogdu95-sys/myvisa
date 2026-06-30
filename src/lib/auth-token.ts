@@ -5,7 +5,15 @@
 const enc = new TextEncoder();
 
 function secret(): string {
-  return process.env.AUTH_SECRET || process.env.ADMIN_PASSWORD || "myvisa-dev-secret";
+  const configured = process.env.AUTH_SECRET || process.env.ADMIN_PASSWORD;
+  if (configured) return configured;
+  // No signing secret configured. Fail CLOSED in production rather than fall
+  // back to a constant committed to the (public) repo — that would let anyone
+  // forge admin/customer tokens. A dev-only constant keeps local dev working.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET (or ADMIN_PASSWORD) must be set in production");
+  }
+  return "myvisa-dev-only-secret";
 }
 
 function toHex(buf: ArrayBuffer): string {

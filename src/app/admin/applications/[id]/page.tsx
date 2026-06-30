@@ -7,10 +7,12 @@ import { statusBadge } from "@/lib/data";
 import { trCountry, statusTR, planTR } from "@/lib/tr";
 import { setPaymentStatus, setStage, setDocumentState, specialistReply } from "../../actions";
 import { StageControl, DocStateControl, PaymentControl, ReplyForm } from "@/components/AdminAppControls";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPage();
   const { id } = await params;
   const a = await prisma.application.findUnique({
     where: { id },
