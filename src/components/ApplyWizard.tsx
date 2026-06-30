@@ -638,7 +638,8 @@ function DoneScreen({ reference }: { reference: string | null }) {
           Başvuru gönderildi!
         </h1>
         <p style={{ fontSize: 15.5, color: "#64748b", margin: "12px 0 0", lineHeight: 1.6 }}>
-          Ödeme onaylandı. Bir MyVisa uzmanı kısa süre içinde belgelerinizi incelemeye başlayacak — her adımı panelinizden takip edin.
+          Ödeme onaylandı. Bir MyVisa uzmanı kısa süre içinde belgelerinizi incelemeye başlayacak.
+          Panelinize giriş yapmak için e-posta adresinize gönderdiğimiz giriş kodunu kullanın.
         </p>
         {reference && (
           <div style={{ display: "inline-block", margin: "22px 0 0", background: "#f1f6fb", border: "1px solid #e2eaf2", borderRadius: 10, padding: "10px 16px", fontSize: 14, fontWeight: 700, color: "#0A1F3C" }}>
@@ -646,8 +647,8 @@ function DoneScreen({ reference }: { reference: string | null }) {
           </div>
         )}
         <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
-          <Link href="/dashboard" className="mv-btn-emerald" style={{ flex: 1, textAlign: "center", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 14.5, padding: 13, borderRadius: 11, textDecoration: "none" }}>
-            Panele git
+          <Link href="/login" className="mv-btn-emerald" style={{ flex: 1, textAlign: "center", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 14.5, padding: 13, borderRadius: 11, textDecoration: "none" }}>
+            Panelime giriş yap
           </Link>
           <Link href="/" className="mv-btn-ghost" style={{ textAlign: "center", background: "#f1f6fb", color: "#0A1F3C", border: "1px solid #e2eaf2", fontWeight: 700, fontSize: 14.5, padding: "13px 20px", borderRadius: 11, textDecoration: "none" }}>
             Ana sayfaya dön

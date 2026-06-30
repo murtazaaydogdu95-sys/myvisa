@@ -27,6 +27,15 @@ The serious risk is concentrated in **authentication and the admin gate**:
 | Low | 2 | F-08, F-09 |
 | Info | 1 | F-10 |
 
+### Remediation log (in progress)
+| Finding | Status | Fix |
+|---|---|---|
+| F-01 | ✅ Remediated | Email OTP login (`/api/customer/login` issue + `/api/customer/verify`); removed auto-login on apply; codes hashed, 10-min TTL, 5-attempt cap |
+| F-02 | ✅ Remediated | Next.js → 15.5.19; `requireAdminPage()` on all admin pages + `assertAdminAction()` in all admin server actions |
+| F-03 | ✅ Remediated | Admin gate fails closed (middleware + `/api/admin/login` deny when no password configured) |
+| F-04 | ✅ Remediated | No constant signing-secret fallback in production (throws if `AUTH_SECRET`/`ADMIN_PASSWORD` unset); dev-only constant retained |
+| F-05–F-10 | ⏳ Open | Pending |
+
 **Top risks in plain language**
 1. Anyone can log in as any customer just by typing their email, and read their passport/bank files.
 2. The admin dashboard (all customer PII + refund controls) can likely be reached without logging in, due to a Next.js framework bug plus admin pages that don't re-check authentication.

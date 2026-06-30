@@ -60,6 +60,11 @@ export const customerLoginSchema = z.object({
   email: z.string().trim().email().max(160),
 });
 
+export const customerVerifySchema = z.object({
+  email: z.string().trim().email().max(160),
+  code: z.string().trim().regex(/^\d{6}$/),
+});
+
 export const adminLoginSchema = z.object({
   user: z.string().max(120),
   password: z.string().max(200),

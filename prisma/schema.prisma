@@ -116,3 +116,16 @@ model Notification {
 
   @@index([status, nextAttempt])
 }
+
+/// One-time login codes for customer email verification (OTP). The code itself
+/// is never stored — only an HMAC hash. Short-lived, single-use, attempt-capped.
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String // lowercased
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}

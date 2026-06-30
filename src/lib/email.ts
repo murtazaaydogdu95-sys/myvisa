@@ -72,4 +72,17 @@ export function specialistReplyEmail(p: { fullName: string; ref: string; text: s
   };
 }
 
+export function loginCodeEmail(p: { code: string }) {
+  return {
+    subject: `MyVisa giriş kodunuz: ${p.code}`,
+    html: shell(
+      "Panel giriş kodunuz",
+      `Panelinize giriş yapmak için aşağıdaki tek kullanımlık kodu girin:<br><br>
+       <span style="font-size:28px;font-weight:800;letter-spacing:6px;color:#0a1f3c">${p.code}</span><br><br>
+       Bu kod 10 dakika boyunca geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz.`,
+    ),
+  };
+}
+
 export const hasAdminEmail = () => !!ADMIN_TO;
+export const hasEmail = () => !!resend;

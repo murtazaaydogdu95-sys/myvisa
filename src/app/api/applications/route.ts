@@ -9,7 +9,7 @@ import { sendEmail, applicationConfirmationEmail } from "@/lib/email";
 import { newPurchaseMessage } from "@/lib/telegram";
 import { enqueueTelegram, flushNotifications } from "@/lib/notifications";
 import { rateLimit } from "@/lib/rate-limit";
-import { customerToken } from "@/lib/auth-token";
+import { issueLoginCode } from "@/lib/login-code";
 
 function codeFor(list: { name: string; code: string }[], name: string, fallback: string) {
   return list.find((c) => c.name === name)?.code ?? fallback;
@@ -130,14 +130,10 @@ export async function POST(req: Request) {
     }),
   ).then(() => flushNotifications(5)).catch(() => {});
 
-  // Auto-log-in the applicant so the apply → dashboard redirect lands authed.
-  const res = NextResponse.json({ id: application.id, ref: application.ref }, { status: 201 });
-  res.cookies.set("mv_customer", await customerToken(d.email), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  return res;
+  // Do NOT auto-issue a session for an unverified email (F-01). Instead send a
+  // one-time login code so the applicant can verify ownership and access their
+  // panel via /login.
+  void issueLoginCode(application.email).catch(() => {});
+
+  return NextResponse.json({ id: application.id, ref: application.ref }, { status: 201 });
 }
