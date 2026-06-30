@@ -34,7 +34,12 @@ The serious risk is concentrated in **authentication and the admin gate**:
 | F-02 | ✅ Remediated | Next.js → 15.5.19; `requireAdminPage()` on all admin pages + `assertAdminAction()` in all admin server actions |
 | F-03 | ✅ Remediated | Admin gate fails closed (middleware + `/api/admin/login` deny when no password configured) |
 | F-04 | ✅ Remediated | No constant signing-secret fallback in production (throws if `AUTH_SECRET`/`ADMIN_PASSWORD` unset); dev-only constant retained |
-| F-05–F-10 | ⏳ Open | Pending |
+| F-05 | ✅ Remediated | Tokens now carry `exp` (admin 8h, customer 7d) and are rejected when expired/malformed |
+| F-06 | ✅ Remediated | Rate-limit client IP from `X-Real-IP` / rightmost XFF (no longer spoofable leftmost XFF) |
+| F-07 | ✅ Remediated | Generic login response (with F-01) |
+| F-08 | ✅ Remediated | `overrides: postcss ^8.5.10` → `npm audit` reports 0 vulnerabilities |
+| F-09 | ✅ Remediated | All user input HTML-escaped in email templates |
+| F-10 | — | Reviewed, not a finding |
 
 **Top risks in plain language**
 1. Anyone can log in as any customer just by typing their email, and read their passport/bank files.
@@ -173,7 +178,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ### F-05 · Static, non-expiring, non-revocable session tokens
 - **Severity:** Medium · **CVSS 3.1:** 5.4 — `AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED
+- **Confidence:** High · **Status:** ✅ **PARTIALLY REMEDIATED** — tokens now embed `exp` and are rejected when expired. *Residual:* full per-session server-side revocation still requires a session store (edge-runtime constraint); cookie clear + bounded `exp` limit the window.
 - **Affected:** `src/lib/auth-token.ts` (`adminToken`, `customerToken`, `readCustomer`, `verifyAdmin`)
 - **Root cause:** Signed payloads contain no issued-at/expiry/nonce; tokens are deterministic per identity; logout is client-side only.
 
@@ -185,7 +190,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ### F-06 · Rate-limit bypass via spoofable `X-Forwarded-For`
 - **Severity:** Medium · **CVSS 3.1:** 5.3 — `AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED
+- **Confidence:** High · **Status:** ✅ **REMEDIATED** — uses `X-Real-IP` / rightmost XFF. *Residual:* limiter is still per-process; use Redis for multi-pod.
 - **Affected:** `src/lib/rate-limit.ts` (`clientIp` takes the leftmost XFF value)
 - **Root cause:** Trusts a client-controlled header for the limiter key; limiter is also per-process.
 
@@ -207,7 +212,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 ---
 
 ### F-08 · Vulnerable dependencies (SCA)
-- **Severity:** Low (aggregate; the actionable item is F-02) · **Status:** CODE-CONFIRMED via `npm audit`
+- **Severity:** Low (aggregate; the actionable item is F-02) · **Status:** ✅ **REMEDIATED** — Next.js upgraded; transitive `postcss` pinned via `overrides`; `npm audit` now reports 0 vulnerabilities.
 - **Affected:** `next@15.1.6`, transitive `postcss < 8.5.10`
 - **Details.** `npm audit` reports multiple Next.js advisories (image-optimization DoS, RSC cache poisoning, SSRF on WebSocket upgrade, the CVE-2025-29927 middleware bypass = F-02) and a moderate postcss XSS (`GHSA-qx2v-qp2m-jg93`).
 - **Remediation.** Upgrade Next.js (≥ 15.2.3 for the bypass; latest 15.x clears most). Re-run `npm audit` after upgrade. Validate the build (the auto-fix bumps to 15.5.x).
@@ -216,7 +221,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ### F-09 · HTML injection in admin notification email
 - **Severity:** Low · **CVSS 3.1:** 4.6 — `AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N`
-- **Confidence:** Medium · **Status:** CODE-CONFIRMED
+- **Confidence:** Medium · **Status:** ✅ **REMEDIATED** — `esc()`/`escMultiline()` applied to all user input in `email.ts`.
 - **Affected:** `src/lib/email.ts` (`contactNotificationEmail`, `specialistReplyEmail`) — interpolate `name`/`email`/`message`/`text` into an HTML email body without escaping.
 - **Details.** A contact-form submitter controls `name`/`message`; these are placed into HTML sent to the admin inbox. Limited blast radius (email client rendering, depends on Resend/sanitization) and partly out of scope (email provider), but it is unescaped user input in an HTML sink.
 - **Remediation.** HTML-escape all user-supplied values before interpolation (or use a templating layer that escapes by default).

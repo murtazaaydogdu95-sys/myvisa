@@ -4,10 +4,20 @@
 type Entry = { count: number; resetAt: number };
 const store = new Map<string, Entry>();
 
+// Resolve the client IP for rate-limiting. The leftmost X-Forwarded-For value
+// is client-controlled (spoofable) — never trust it. Prefer X-Real-IP (set by
+// the trusted reverse proxy / traefik and overwritten each hop), otherwise use
+// the RIGHTMOST X-Forwarded-For entry (appended by our own proxy, not
+// attacker-injectable). Assumes a single trusted proxy in front of the app.
 function clientIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "unknown";
+  if (xff) {
+    const parts = xff.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return "unknown";
 }
 
 /** Returns true if allowed, false if the limit is exceeded. */

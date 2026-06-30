@@ -24,6 +24,17 @@ export async function sendEmail({ to, subject, html }: Mail): Promise<boolean> {
   }
 }
 
+// Escape user-supplied values before interpolating into HTML email bodies (F-09).
+const esc = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+// Escape, then render newlines as <br>.
+const escMultiline = (s: string) => esc(s).replace(/\n/g, "<br>");
+
 const shell = (title: string, body: string) => `
   <div style="font-family:system-ui,sans-serif;background:#f5f7fa;padding:24px">
     <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #eef2f7;border-radius:16px;overflow:hidden">
@@ -42,8 +53,8 @@ export function applicationConfirmationEmail(p: { fullName: string; ref: string;
     subject: `Başvurunuz alındı — ${p.ref}`,
     html: shell(
       "Başvurunuz alındı 🎉",
-      `Merhaba ${p.fullName},<br><br>${p.destination} vizesi başvurunuz alındı ve ödemeniz onaylandı.
-       Referans numaranız: <strong>${p.ref}</strong>.<br><br>
+      `Merhaba ${esc(p.fullName)},<br><br>${esc(p.destination)} vizesi başvurunuz alındı ve ödemeniz onaylandı.
+       Referans numaranız: <strong>${esc(p.ref)}</strong>.<br><br>
        Bir MyVisa uzmanı kısa süre içinde belgelerinizi incelemeye başlayacak.
        Süreci panelinizden takip edebilirsiniz.`,
     ),
@@ -56,7 +67,7 @@ export function contactNotificationEmail(p: { name: string; email: string; messa
     subject: `Yeni iletişim mesajı — ${p.name}`,
     html: shell(
       "Yeni iletişim mesajı",
-      `<strong>${p.name}</strong> (${p.email}) şunu yazdı:<br><br>${p.message.replace(/\n/g, "<br>")}`,
+      `<strong>${esc(p.name)}</strong> (${esc(p.email)}) şunu yazdı:<br><br>${escMultiline(p.message)}`,
     ),
   };
 }
@@ -66,7 +77,7 @@ export function specialistReplyEmail(p: { fullName: string; ref: string; text: s
     subject: `Başvurunuzla ilgili güncelleme — ${p.ref}`,
     html: shell(
       "Uzmanınızdan yeni mesaj",
-      `Merhaba ${p.fullName},<br><br>${p.text.replace(/\n/g, "<br>")}<br><br>
+      `Merhaba ${esc(p.fullName)},<br><br>${escMultiline(p.text)}<br><br>
        Tüm detayları panelinizden görebilirsiniz.`,
     ),
   };

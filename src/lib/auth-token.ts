@@ -37,27 +37,43 @@ async function hmac(data: string): Promise<string> {
 const b64 = (s: string) => btoa(s);
 const unb64 = (s: string) => atob(s);
 
-// ── Admin: token is just the signature of a fixed payload ──
-export function adminToken(user: string): Promise<string> {
-  return hmac(`admin:${user}`);
+const ADMIN_TTL = 8 * 60 * 60; // seconds
+const CUSTOMER_TTL = 7 * 24 * 60 * 60;
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+// ── Admin: token = exp.signature(admin:user:exp) — bounded lifetime (F-05) ──
+export async function adminToken(user: string): Promise<string> {
+  const exp = nowSec() + ADMIN_TTL;
+  return `${exp}.${await hmac(`admin:${user}:${exp}`)}`;
 }
 export async function verifyAdmin(cookie: string | undefined, user: string): Promise<boolean> {
-  return !!cookie && cookie === (await adminToken(user));
+  if (!cookie) return false;
+  const parts = cookie.split(".");
+  if (parts.length !== 2) return false;
+  const [expStr, sig] = parts;
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || exp < nowSec()) return false; // expired/invalid
+  return sig === (await hmac(`admin:${user}:${exp}`));
 }
 
-// ── Customer: cookie = base64(email).signature, so the email is readable but tamper-proof ──
+// ── Customer: cookie = base64(email).exp.signature — readable email, tamper-proof, expiring ──
 export async function customerToken(email: string): Promise<string> {
   const e = email.toLowerCase();
-  return `${b64(e)}.${await hmac(`cust:${e}`)}`;
+  const exp = nowSec() + CUSTOMER_TTL;
+  return `${b64(e)}.${exp}.${await hmac(`cust:${e}:${exp}`)}`;
 }
 export async function readCustomer(cookie: string | undefined): Promise<string | null> {
-  if (!cookie || !cookie.includes(".")) return null;
-  const [payload, sig] = cookie.split(".");
+  if (!cookie) return null;
+  const parts = cookie.split(".");
+  if (parts.length !== 3) return null;
+  const [payload, expStr, sig] = parts;
   let email: string;
   try {
     email = unb64(payload);
   } catch {
     return null;
   }
-  return sig === (await hmac(`cust:${email}`)) ? email : null;
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || exp < nowSec()) return null; // expired/invalid
+  return sig === (await hmac(`cust:${email}:${exp}`)) ? email : null;
 }
