@@ -91,7 +91,7 @@ Single-org, multi-customer (not multi-tenant). Critical boundary = **per-custome
 
 ### F-01 · Passwordless customer authentication → account takeover & PII theft
 - **Severity:** Critical · **CVSS 3.1:** 9.1 — `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED (NEEDS-DYNAMIC for captured PoC)
+- **Confidence:** High · **Status:** ✅ **REMEDIATED** (commit `6fb6878`) — replaced with email OTP; auto-login on apply removed. *Residual:* requires an email provider (`RESEND_API_KEY`) configured in prod or customers cannot receive codes.
 - **Affected:** `src/app/api/customer/login/route.ts`, `src/app/api/applications/route.ts` (auto-login), `src/app/api/documents/[id]/route.ts` (PII sink)
 - **Root cause:** Customer identity is an **unverified email**; possession of the email is never proven.
 
@@ -124,7 +124,7 @@ POST /api/applications     {"email":"victim@example.com", …}   → 201 + Set-C
 
 ### F-02 · Admin auth bypass via Next.js middleware vulnerability (CVE-2025-29927)
 - **Severity:** Critical · **CVSS 3.1:** 9.1 — `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED (version + architecture); NEEDS-DYNAMIC for the header PoC
+- **Confidence:** High · **Status:** ✅ **REMEDIATED** (commit `d19872c`) — Next.js upgraded to 15.5.19; admin pages/actions now self-authorize via `requireAdminPage()` / `assertAdminAction()`.
 - **Affected:** `package.json` (`next@15.1.6`), `src/middleware.ts`, all `src/app/admin/**/page.tsx`, `src/app/admin/actions.ts`
 - **Root cause:** Authorization for the entire admin area is enforced **only in middleware**, on a Next.js version vulnerable to the `x-middleware-subrequest` bypass (patched in 15.2.3). Admin pages and server actions contain **no independent auth check**.
 
@@ -149,7 +149,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ### F-03 · Admin gate fails OPEN when `ADMIN_PASSWORD` is unset
 - **Severity:** High · **CVSS 3.1:** 8.6 — `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED (observed in production during this engagement)
+- **Confidence:** High · **Status:** ✅ **REMEDIATED** (commit `d19872c`) — middleware, `/api/admin/login`, and `isAdminRequest()` all fail closed when no admin password is configured.
 - **Affected:** `src/middleware.ts` (`if (!pass) return NextResponse.next();`), `src/app/api/admin/login/route.ts` (`if (pass && !(…))`)
 - **Root cause:** Missing admin credentials are treated as "auth disabled" (fail-open) instead of "deny".
 
@@ -161,7 +161,7 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ### F-04 · Hardcoded fallback HMAC signing secret in a public repository
 - **Severity:** High · **CVSS 3.1:** 8.1 — `AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N`
-- **Confidence:** High · **Status:** CODE-CONFIRMED
+- **Confidence:** High · **Status:** ✅ **REMEDIATED** (commit `d19872c`) — production no longer falls back to a constant (throws if unset). *Residual action:* rotate `AUTH_SECRET` since the old constant was public and shared in chat.
 - **Affected:** `src/lib/auth-token.ts` → `secret() = process.env.AUTH_SECRET || process.env.ADMIN_PASSWORD || "myvisa-dev-secret"`
 - **Root cause:** A committed constant is used as the token-signing key when env vars are absent; the repo is public.
 
@@ -234,15 +234,22 @@ Header: x-middleware-subrequest: middleware        (or the path-chain variant fo
 
 ## Remediation priority
 
-| Order | Finding | Action |
-|---|---|---|
-| 1 | F-02 | Upgrade Next ≥ 15.2.3 **and** add in-handler `verifyAdmin` to admin pages/actions |
-| 2 | F-01 | Replace email-only login with magic-link/OTP; stop auto-login on apply |
-| 3 | F-03 | Fail closed when admin creds unset |
-| 4 | F-04 | Require `AUTH_SECRET`; remove fallback constant; rotate the secret |
-| 5 | F-05 | Add exp/iat + revocation to tokens |
-| 6 | F-06 / F-07 | Fix IP source for rate limiting; generic login responses |
-| 7 | F-08 / F-09 | Patch deps; escape email HTML |
+| Order | Finding | Action | State |
+|---|---|---|---|
+| 1 | F-02 | Upgrade Next ≥ 15.2.3 **and** add in-handler admin authz | ✅ done |
+| 2 | F-01 | Replace email-only login with OTP; stop auto-login on apply | ✅ done |
+| 3 | F-03 | Fail closed when admin creds unset | ✅ done |
+| 4 | F-04 | Remove fallback constant in prod; **rotate the secret** | ✅ code done · follow-up: rotate secret |
+| 5 | F-07 | Generic login responses (no enumeration) | ✅ done (with F-01) |
+| 6 | F-05 | Add exp/iat + revocation to tokens | ⏳ open |
+| 7 | F-06 | Fix IP source for rate limiting | ⏳ open |
+| 8 | F-09 | Escape user input in admin notification email | ⏳ open |
+| 9 | F-08 | Re-run `npm audit`; clear remaining moderate deps | ⏳ open |
+
+### Operational follow-ups (config, not code)
+- **Rotate `AUTH_SECRET`** (old value was in a public repo / shared in chat).
+- **Set `RESEND_API_KEY` + `EMAIL_FROM` in prod** — required for F-01 OTP delivery, or customers can't log in.
+- Rotate the Telegram bot token via @BotFather (shared during debugging).
 
 ---
 
